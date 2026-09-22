@@ -2,11 +2,15 @@ import ProductModel from "../models/product.model.js";
 
 class ProductRepository {
   async getAll() {
-    return ProductModel.find({}).lean();
+    return ProductModel.find({})
+      .select("name description price stock status")
+      .lean();
   }
 
   async getById(id) {
-    return ProductModel.findById(id).lean();
+    return ProductModel.findById(id)
+      .select("name description price stock status")
+      .lean();
   }
 
   async create(productData) {
@@ -21,7 +25,9 @@ class ProductRepository {
         new: true,
         runValidators: true
       }
-    ).lean();
+    )
+      .select("name description price stock status")
+      .lean();
   }
 
   async deleteById(id) {
