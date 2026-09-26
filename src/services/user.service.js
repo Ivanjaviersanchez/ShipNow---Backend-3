@@ -21,9 +21,15 @@ class UserService {
   }
 
   async createUser(userData) {
-    const { firstName, lastName, email, role } = userData;
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      role,
+      isAvailable
+    } = userData;
 
-    // 1. Validar campos obligatorios
     if (!firstName || !lastName || !email) {
       const error = new Error(
         "Los campos firstName, lastName y email son obligatorios"
@@ -33,10 +39,8 @@ class UserService {
       throw error;
     }
 
-    // 2. Normalizar email
     const normalizedEmail = email.trim().toLowerCase();
 
-    // 3. Verificar si ya existe un usuario con ese email
     const existingUser = await userRepository.getByEmail(
       normalizedEmail
     );
@@ -50,8 +54,7 @@ class UserService {
       throw error;
     }
 
-    // 4. Validar role
-    const userRole = role || USER_ROLES.USER;
+    const userRole = role || USER_ROLES.CUSTOMER;
 
     if (!Object.values(USER_ROLES).includes(userRole)) {
       const error = new Error("El rol de usuario no es válido");
@@ -59,19 +62,22 @@ class UserService {
       throw error;
     }
 
-    // 5. Crear usuario
     const newUser = await userRepository.create({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: normalizedEmail,
-      role: userRole
+      password,
+      role: userRole,
+      isAvailable:
+        userRole === USER_ROLES.DRIVER
+          ? Boolean(isAvailable)
+          : false
     });
 
     return newUser;
   }
 
   async updateUser(id, userData) {
-    // 1. Verificar que el usuario exista
     const existingUser = await userRepository.getById(id);
 
     if (!existingUser) {
@@ -82,11 +88,9 @@ class UserService {
 
     const updateData = { ...userData };
 
-    // 2. Normalizar email si se está modificando
     if (updateData.email !== undefined) {
       const normalizedEmail = updateData.email.trim().toLowerCase();
 
-      // Verificar que el nuevo email no pertenezca a otro usuario
       const userWithEmail = await userRepository.getByEmail(
         normalizedEmail
       );
@@ -106,22 +110,28 @@ class UserService {
       updateData.email = normalizedEmail;
     }
 
-    // 3. Validar role si se está modificando
     if (updateData.role !== undefined) {
       if (!Object.values(USER_ROLES).includes(updateData.role)) {
         const error = new Error("El rol de usuario no es válido");
         error.statusCode = 400;
         throw error;
       }
+
+      if (updateData.role !== USER_ROLES.DRIVER) {
+        updateData.isAvailable = false;
+      }
     }
 
-    // 4. Limpiar nombres
     if (updateData.firstName !== undefined) {
       updateData.firstName = updateData.firstName.trim();
     }
 
     if (updateData.lastName !== undefined) {
       updateData.lastName = updateData.lastName.trim();
+    }
+
+    if (updateData.isAvailable !== undefined) {
+      updateData.isAvailable = Boolean(updateData.isAvailable);
     }
 
     return userRepository.updateById(id, updateData);
