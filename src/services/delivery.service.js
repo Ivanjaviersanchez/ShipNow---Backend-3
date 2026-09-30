@@ -4,18 +4,21 @@ import {
   DELIVERY_STATUS
 } from "../constants/index.js";
 
+import { createAppError } from "../utils/errors.js";
+
 class DeliveryService {
   async getAllDeliveries() {
     return deliveryRepository.getAll();
   }
 
   async getDeliveryById(id) {
-    const delivery = await deliveryRepository.getById(id);
+    const delivery =
+      await deliveryRepository.getById(id);
 
     if (!delivery) {
-      const error = new Error("Entrega no encontrada");
-      error.statusCode = 404;
-      throw error;
+      throw createAppError(
+        "DELIVERY_NOT_FOUND"
+      );
     }
 
     return delivery;
@@ -27,58 +30,59 @@ class DeliveryService {
       driver
     } = deliveryData;
 
-    // Validar pedido
     if (!order) {
-      const error = new Error(
+      throw createAppError(
+        "VALIDATION_ERROR",
         "El pedido es obligatorio"
       );
-      error.statusCode = 400;
-      throw error;
     }
 
-    // Validar repartidor
     if (!driver) {
-      const error = new Error(
+      throw createAppError(
+        "VALIDATION_ERROR",
         "El repartidor es obligatorio"
       );
-      error.statusCode = 400;
-      throw error;
     }
 
-    const newDelivery = await deliveryRepository.create({
-      order,
-      driver,
-      status: DELIVERY_STATUS.PENDING
-    });
+    const newDelivery =
+      await deliveryRepository.create({
+        order,
+        driver,
+        status: DELIVERY_STATUS.PENDING
+      });
 
     return newDelivery;
   }
 
-  async updateDeliveryStatus(id, status) {
+  async updateDeliveryStatus(
+    id,
+    status
+  ) {
     const existingDelivery =
       await deliveryRepository.getById(id);
 
     if (!existingDelivery) {
-      const error = new Error(
-        "Entrega no encontrada"
+      throw createAppError(
+        "DELIVERY_NOT_FOUND"
       );
-      error.statusCode = 404;
-      throw error;
     }
 
     if (
-      !Object.values(DELIVERY_STATUS).includes(status)
+      !Object.values(
+        DELIVERY_STATUS
+      ).includes(status)
     ) {
-      const error = new Error(
-        "El estado de la entrega no es válido"
+      throw createAppError(
+        "INVALID_DELIVERY_STATUS"
       );
-      error.statusCode = 400;
-      throw error;
     }
 
-    return deliveryRepository.updateById(id, {
-      status
-    });
+    return deliveryRepository.updateById(
+      id,
+      {
+        status
+      }
+    );
   }
 
   async deleteDelivery(id) {
@@ -86,19 +90,19 @@ class DeliveryService {
       await deliveryRepository.getById(id);
 
     if (!existingDelivery) {
-      const error = new Error(
-        "Entrega no encontrada"
+      throw createAppError(
+        "DELIVERY_NOT_FOUND"
       );
-      error.statusCode = 404;
-      throw error;
     }
 
     await deliveryRepository.deleteById(id);
 
     return {
-      message: "Entrega eliminada correctamente"
+      message:
+        "Entrega eliminada correctamente"
     };
   }
 }
 
-export const deliveryService = new DeliveryService();
+export const deliveryService =
+  new DeliveryService();

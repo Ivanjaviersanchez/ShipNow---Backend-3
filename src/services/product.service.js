@@ -1,7 +1,11 @@
 import { productRepository } from "../repositories/product.repository.js";
+
 import { PRODUCT_STATUS } from "../constants/index.js";
 
+import { createAppError } from "../utils/errors.js";
+
 class ProductService {
+
   async getAllProducts() {
     const products = await productRepository.getAll();
 
@@ -12,36 +16,43 @@ class ProductService {
     const product = await productRepository.getById(id);
 
     if (!product) {
-      const error = new Error("Producto no encontrado");
-      error.statusCode = 404;
-      throw error;
+      throw createAppError("PRODUCT_NOT_FOUND");
     }
 
     return product;
   }
 
   async createProduct(productData) {
-    const { name, description, price, stock } = productData;
+    const {
+      name,
+      description,
+      price,
+      stock
+    } = productData;
 
-    if (!name || price === undefined || stock === undefined) {
-      const error = new Error(
+    if (
+      !name ||
+      price === undefined ||
+      stock === undefined
+    ) {
+      throw createAppError(
+        "PRODUCT_VALIDATION_ERROR",
         "Los campos name, price y stock son obligatorios"
       );
-
-      error.statusCode = 400;
-      throw error;
     }
 
     if (price < 0) {
-      const error = new Error("El precio no puede ser negativo");
-      error.statusCode = 400;
-      throw error;
+      throw createAppError(
+        "PRODUCT_VALIDATION_ERROR",
+        "El precio no puede ser negativo"
+      );
     }
 
     if (stock < 0) {
-      const error = new Error("El stock no puede ser negativo");
-      error.statusCode = 400;
-      throw error;
+      throw createAppError(
+        "PRODUCT_VALIDATION_ERROR",
+        "El stock no puede ser negativo"
+      );
     }
 
     const status =
@@ -49,39 +60,47 @@ class ProductService {
         ? PRODUCT_STATUS.AVAILABLE
         : PRODUCT_STATUS.OUT_OF_STOCK;
 
-    const newProduct = await productRepository.create({
-      name,
-      description,
-      price,
-      stock,
-      status
-    });
+    const newProduct =
+      await productRepository.create({
+        name,
+        description,
+        price,
+        stock,
+        status
+      });
 
     return newProduct;
   }
 
   async updateProduct(id, productData) {
-    const existingProduct = await productRepository.getById(id);
+    const existingProduct =
+      await productRepository.getById(id);
 
     if (!existingProduct) {
-      const error = new Error("Producto no encontrado");
-      error.statusCode = 404;
-      throw error;
+      throw createAppError("PRODUCT_NOT_FOUND");
     }
 
-    const updateData = { ...productData };
+    const updateData = {
+      ...productData
+    };
 
-    if (updateData.price !== undefined && updateData.price < 0) {
-      const error = new Error("El precio no puede ser negativo");
-      error.statusCode = 400;
-      throw error;
+    if (
+      updateData.price !== undefined &&
+      updateData.price < 0
+    ) {
+      throw createAppError(
+        "PRODUCT_VALIDATION_ERROR",
+        "El precio no puede ser negativo"
+      );
     }
 
     if (updateData.stock !== undefined) {
+
       if (updateData.stock < 0) {
-        const error = new Error("El stock no puede ser negativo");
-        error.statusCode = 400;
-        throw error;
+        throw createAppError(
+          "PRODUCT_VALIDATION_ERROR",
+          "El stock no puede ser negativo"
+        );
       }
 
       updateData.status =
@@ -90,16 +109,18 @@ class ProductService {
           : PRODUCT_STATUS.OUT_OF_STOCK;
     }
 
-    return productRepository.updateById(id, updateData);
+    return productRepository.updateById(
+      id,
+      updateData
+    );
   }
 
   async deleteProduct(id) {
-    const existingProduct = await productRepository.getById(id);
+    const existingProduct =
+      await productRepository.getById(id);
 
     if (!existingProduct) {
-      const error = new Error("Producto no encontrado");
-      error.statusCode = 404;
-      throw error;
+      throw createAppError("PRODUCT_NOT_FOUND");
     }
 
     await productRepository.deleteById(id);
@@ -108,6 +129,8 @@ class ProductService {
       message: "Producto eliminado correctamente"
     };
   }
+
 }
 
-export const productService = new ProductService();
+export const productService =
+  new ProductService();

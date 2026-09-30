@@ -5,6 +5,8 @@ import {
   DELIVERY_PRIORITY
 } from "../constants/index.js";
 
+import { createAppError } from "../utils/errors.js";
+
 class OrderService {
   async getAllOrders() {
     return orderRepository.getAll();
@@ -14,9 +16,7 @@ class OrderService {
     const order = await orderRepository.getById(id);
 
     if (!order) {
-      const error = new Error("Pedido no encontrado");
-      error.statusCode = 404;
-      throw error;
+      throw createAppError("ORDER_NOT_FOUND");
     }
 
     return order;
@@ -31,78 +31,66 @@ class OrderService {
       priority
     } = orderData;
 
-    // Validar cliente
     if (!customer) {
-      const error = new Error(
+      throw createAppError(
+        "VALIDATION_ERROR",
         "El cliente es obligatorio"
       );
-      error.statusCode = 400;
-      throw error;
     }
 
-    // Validar productos
     if (!Array.isArray(items) || items.length === 0) {
-      const error = new Error(
-        "El pedido debe contener al menos un producto"
+      throw createAppError(
+        "ORDER_ITEMS_REQUIRED"
       );
-      error.statusCode = 400;
-      throw error;
     }
 
-    // Validar dirección
     if (!deliveryAddress) {
-      const error = new Error(
+      throw createAppError(
+        "VALIDATION_ERROR",
         "La dirección de entrega es obligatoria"
       );
-      error.statusCode = 400;
-      throw error;
     }
 
-    // Validar total
     if (total === undefined || total === null) {
-      const error = new Error(
+      throw createAppError(
+        "VALIDATION_ERROR",
         "El total del pedido es obligatorio"
       );
-      error.statusCode = 400;
-      throw error;
     }
 
     if (Number(total) < 0) {
-      const error = new Error(
+      throw createAppError(
+        "VALIDATION_ERROR",
         "El total no puede ser negativo"
       );
-      error.statusCode = 400;
-      throw error;
     }
 
-    // Validar cada producto del pedido
     for (const item of items) {
       if (!item.name) {
-        const error = new Error(
+        throw createAppError(
+          "VALIDATION_ERROR",
           "Cada producto debe tener un nombre"
         );
-        error.statusCode = 400;
-        throw error;
       }
 
       if (!item.quantity || item.quantity < 1) {
-        const error = new Error(
+        throw createAppError(
+          "VALIDATION_ERROR",
           "La cantidad de cada producto debe ser mayor a 0"
         );
-        error.statusCode = 400;
-        throw error;
       }
 
-      if (item.price === undefined || item.price < 0) {
-        const error = new Error(
+      if (
+        item.price === undefined ||
+        item.price < 0
+      ) {
+        throw createAppError(
+          "VALIDATION_ERROR",
           "El precio de cada producto no puede ser negativo"
         );
-        error.statusCode = 400;
-        throw error;
       }
     }
 
-    // Validar prioridad
     const orderPriority =
       priority || DELIVERY_PRIORITY.NORMAL;
 
@@ -111,21 +99,22 @@ class OrderService {
         orderPriority
       )
     ) {
-      const error = new Error(
+      throw createAppError(
+        "VALIDATION_ERROR",
         "La prioridad del pedido no es válida"
       );
-      error.statusCode = 400;
-      throw error;
     }
 
-    const newOrder = await orderRepository.create({
-      customer,
-      items,
-      deliveryAddress: deliveryAddress.trim(),
-      total: Number(total),
-      status: ORDER_STATUS.CREATED,
-      priority: orderPriority
-    });
+    const newOrder =
+      await orderRepository.create({
+        customer,
+        items,
+        deliveryAddress:
+          deliveryAddress.trim(),
+        total: Number(total),
+        status: ORDER_STATUS.CREATED,
+        priority: orderPriority
+      });
 
     return newOrder;
   }
@@ -135,24 +124,23 @@ class OrderService {
       await orderRepository.getById(id);
 
     if (!existingOrder) {
-      const error = new Error(
-        "Pedido no encontrado"
+      throw createAppError(
+        "ORDER_NOT_FOUND"
       );
-      error.statusCode = 404;
-      throw error;
     }
 
-    if (!Object.values(ORDER_STATUS).includes(status)) {
-      const error = new Error(
-        "El estado del pedido no es válido"
+    if (
+      !Object.values(ORDER_STATUS).includes(status)
+    ) {
+      throw createAppError(
+        "INVALID_ORDER_STATUS"
       );
-      error.statusCode = 400;
-      throw error;
     }
 
-    return orderRepository.updateById(id, {
-      status
-    });
+    return orderRepository.updateById(
+      id,
+      { status }
+    );
   }
 
   async deleteOrder(id) {
@@ -160,19 +148,19 @@ class OrderService {
       await orderRepository.getById(id);
 
     if (!existingOrder) {
-      const error = new Error(
-        "Pedido no encontrado"
+      throw createAppError(
+        "ORDER_NOT_FOUND"
       );
-      error.statusCode = 404;
-      throw error;
     }
 
     await orderRepository.deleteById(id);
 
     return {
-      message: "Pedido eliminado correctamente"
+      message:
+        "Pedido eliminado correctamente"
     };
   }
 }
 
-export const orderService = new OrderService();
+export const orderService =
+  new OrderService();

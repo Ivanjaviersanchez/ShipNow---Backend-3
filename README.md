@@ -2,11 +2,11 @@
 
 API backend desarrollada con **Node.js, Express y MongoDB** para la gestión de una plataforma de logística y envíos llamada **ShipNow**.
 
-El proyecto forma parte del curso **Backend 3 de Coderhouse** y tiene como objetivo aplicar una arquitectura por capas, separación de responsabilidades, configuración mediante variables de entorno, persistencia con MongoDB y generación de datos de prueba mediante Mocking.
+El proyecto forma parte del curso **Backend 3 de Coderhouse** y tiene como objetivo aplicar arquitectura por capas, separación de responsabilidades, configuración mediante variables de entorno, persistencia con MongoDB, generación de datos de prueba mediante Mocking y manejo centralizado de errores.
 
 ---
 
-## 📌 Objetivo del proyecto
+# 📌 Objetivo del proyecto
 
 ShipNow permite gestionar diferentes entidades relacionadas con una plataforma logística:
 
@@ -16,7 +16,7 @@ ShipNow permite gestionar diferentes entidades relacionadas con una plataforma l
 - 🚚 Entregas
 - 🧪 Datos simulados mediante Mocking
 
-El proyecto está organizado utilizando una arquitectura por capas para separar responsabilidades y facilitar:
+El proyecto está organizado utilizando una arquitectura por capas para facilitar:
 
 - Mantenimiento
 - Escalabilidad
@@ -36,7 +36,7 @@ Request HTTP
      ↓
    Router
      ↓
- Controller
+  Controller
      ↓
    Service
      ↓
@@ -44,14 +44,18 @@ Request HTTP
      ↓
    Model
      ↓
- MongoDB
+  MongoDB
 ```
 
-### Router
+## Router
 
-Se encarga únicamente de definir las rutas y conectar cada endpoint con su controlador correspondiente.
+Se encarga de definir las rutas y conectar cada endpoint con el controlador correspondiente.
 
-### Controller
+Los routers no contienen lógica de negocio ni consultas directas a MongoDB.
+
+---
+
+## Controller
 
 Se encarga de:
 
@@ -59,37 +63,50 @@ Se encarga de:
 - Obtener información de `req.params`, `req.query` o `req.body`.
 - Llamar al Service correspondiente.
 - Construir la respuesta HTTP.
-- Delegar los errores al middleware centralizado.
+- Delegar los errores al middleware centralizado mediante `next(error)`.
 
-Los controladores no contienen consultas directas a MongoDB ni lógica de negocio compleja.
+Los Controllers no contienen consultas directas a MongoDB ni lógica de negocio compleja.
 
-### Service
+---
+
+## Service
 
 Contiene la lógica de negocio de la aplicación.
 
 Entre sus responsabilidades se encuentran:
 
 - Validación de datos.
-- Validación de estados y prioridades según las constantes del dominio.
-- Reglas de negocio.
+- Validación de estados y prioridades.
+- Aplicación de reglas de negocio.
 - Coordinación de operaciones.
 - Preparación de datos antes de enviarlos al Repository.
+- Detección y generación de errores de dominio.
 
-### Repository
+Los Services utilizan `createAppError()` para generar errores controlados.
+
+---
+
+## Repository
 
 Es la capa encargada de comunicarse con los modelos de Mongoose.
 
-Su objetivo es encapsular las operaciones de persistencia.
+Su objetivo es encapsular las operaciones de persistencia y evitar que los Services dependan directamente de Mongoose.
 
-### Model
+---
+
+## Model
 
 Define la estructura de los documentos almacenados en MongoDB mediante Mongoose.
 
-### Config
+---
+
+## Config
 
 Centraliza la configuración de la aplicación y la lectura de variables de entorno.
 
-### Constants
+---
+
+## Constants
 
 Contiene valores constantes utilizados por las reglas del dominio, evitando valores escritos directamente en diferentes partes del código.
 
@@ -118,7 +135,8 @@ ShipNow/
 │   │
 │   ├── middleware/
 │   │   ├── error.middleware.js
-│   │   └── mocks.middleware.js
+│   │   ├── mocks.middleware.js
+│   │   └── notFound.middleware.js
 │   │
 │   ├── mocks/
 │   │   ├── user.mock.js
@@ -153,6 +171,7 @@ ShipNow/
 │   │   └── mocks.service.js
 │   │
 │   ├── utils/
+│   │   └── errors.js
 │   │
 │   └── app.js
 │
@@ -356,7 +375,7 @@ DEFAULT = 10
 DEFAULT_PASSWORD = coder123
 ```
 
-### Cantidad máxima
+## Cantidad máxima
 
 Los endpoints de Mocking permiten generar hasta:
 
@@ -378,7 +397,7 @@ devuelve un error indicando que la cantidad máxima permitida es 50.
 
 # 👤 Generar usuarios simulados
 
-### Endpoint
+## Endpoint
 
 ```http
 GET /api/mocks/users
@@ -423,7 +442,7 @@ El password no se expone en la respuesta.
 
 # 💾 Guardar usuarios simulados
 
-### Endpoint
+## Endpoint
 
 ```http
 POST /api/mocks/users
@@ -448,7 +467,7 @@ Los usuarios quedan almacenados en la base de datos.
 
 # 🛒 Generar pedidos simulados
 
-### Endpoint
+## Endpoint
 
 ```http
 POST /api/mocks/orders
@@ -499,7 +518,7 @@ Los datos generados mediante este endpoint **no se guardan en MongoDB**.
 
 # 💾 Guardar pedidos simulados
 
-### Endpoint
+## Endpoint
 
 ```http
 POST /api/mocks/orders/seed
@@ -529,7 +548,7 @@ Los pedidos generados son almacenados en MongoDB.
 
 # 🚚 Generar entregas simuladas
 
-### Endpoint
+## Endpoint
 
 ```http
 POST /api/mocks/deliveries
@@ -580,7 +599,7 @@ Las entregas generadas mediante este endpoint **no se guardan en MongoDB**.
 
 # 💾 Guardar entregas simuladas
 
-### Endpoint
+## Endpoint
 
 ```http
 POST /api/mocks/deliveries/seed
@@ -615,7 +634,7 @@ Las entregas generadas son almacenadas en MongoDB.
 
 Para facilitar las pruebas del proyecto existe un endpoint que genera un conjunto completo de información relacionada.
 
-### Endpoint
+## Endpoint
 
 ```http
 POST /api/mocks/seed
@@ -650,9 +669,9 @@ User
  └── Order
       │
       └── Delivery
-            │
-            └── User
-                 role: driver
+           │
+           └── User
+                role: driver
 ```
 
 El endpoint devuelve la cantidad de registros creados:
@@ -677,7 +696,7 @@ Además, los datos quedan persistidos en MongoDB.
 
 El proceso de carga completa mantiene las relaciones entre las entidades.
 
-### Usuarios
+## Usuarios
 
 Se generan usuarios con diferentes roles:
 
@@ -687,7 +706,7 @@ driver
 store
 ```
 
-### Pedidos
+## Pedidos
 
 Cada pedido utiliza un usuario con rol:
 
@@ -697,7 +716,7 @@ customer
 
 como cliente.
 
-### Entregas
+## Entregas
 
 Cada entrega utiliza:
 
@@ -747,19 +766,334 @@ Por ejemplo:
 GET /api/mocks/users?qty=2
 ```
 
-devuelve:
+devuelve HTTP:
 
 ```text
 403 Forbidden
 ```
 
-con el mensaje:
+con una respuesta centralizada:
 
-```text
-El módulo de mocks está deshabilitado en producción
+```json
+{
+  "status": "error",
+  "error": "FORBIDDEN",
+  "message": "No tenés permisos para realizar esta operación"
+}
 ```
 
 Esto evita que los endpoints destinados a pruebas puedan utilizarse accidentalmente en un entorno productivo.
+
+---
+
+# 🚨 Manejo centralizado de errores
+
+A partir de la Pre-entrega 3, ShipNow incorpora un sistema centralizado para el manejo de errores.
+
+El objetivo es evitar que cada Controller o Router tenga que construir manualmente sus propias respuestas de error.
+
+La arquitectura utiliza:
+
+```text
+Service / Middleware
+        ↓
+    AppError
+        ↓
+    next(error)
+        ↓
+error.middleware.js
+        ↓
+ HTTP Response
+```
+
+El middleware principal se encuentra en:
+
+```text
+src/middleware/error.middleware.js
+```
+
+---
+
+# 🧩 Errores personalizados
+
+Los errores personalizados se encuentran centralizados en:
+
+```text
+src/utils/errors.js
+```
+
+Este archivo contiene:
+
+- `AppError`
+- `ERROR_DEFINITIONS`
+- `createAppError()`
+
+Los Services utilizan `createAppError()` para generar errores controlados.
+
+Ejemplo:
+
+```js
+throw createAppError("USER_NOT_FOUND");
+```
+
+De esta manera, la lógica de negocio detecta el problema y el middleware centralizado se encarga de construir la respuesta HTTP.
+
+---
+
+# 📚 Diccionario de errores
+
+ShipNow utiliza códigos de error definidos centralmente.
+
+## Usuarios
+
+```text
+USER_NOT_FOUND
+USER_ALREADY_EXISTS
+INVALID_USER_ROLE
+```
+
+## Productos
+
+```text
+PRODUCT_NOT_FOUND
+PRODUCT_VALIDATION_ERROR
+```
+
+## Pedidos
+
+```text
+ORDER_NOT_FOUND
+ORDER_ITEMS_REQUIRED
+INVALID_ORDER_STATUS
+```
+
+## Entregas
+
+```text
+DELIVERY_NOT_FOUND
+INVALID_DELIVERY_STATUS
+```
+
+## Mocking
+
+```text
+INVALID_MOCK_AMOUNT
+```
+
+## Sistema
+
+```text
+DATABASE_ERROR
+INTERNAL_SERVER_ERROR
+ROUTE_NOT_FOUND
+FORBIDDEN
+```
+
+Estos códigos permiten mantener respuestas predecibles y uniformes en toda la API.
+
+---
+
+# 📋 Formato estándar de errores
+
+Las respuestas de error utilizan el siguiente formato:
+
+```json
+{
+  "status": "error",
+  "error": "ERROR_CODE",
+  "message": "Mensaje claro para el cliente"
+}
+```
+
+Por ejemplo:
+
+```json
+{
+  "status": "error",
+  "error": "USER_NOT_FOUND",
+  "message": "No se encontró el usuario solicitado"
+}
+```
+
+---
+
+# 🛠️ Detalles de errores en desarrollo
+
+Cuando la aplicación funciona con:
+
+```text
+NODE_ENV=development
+```
+
+la respuesta puede incluir información adicional dentro de `details`.
+
+Ejemplo:
+
+```json
+{
+  "status": "error",
+  "error": "INVALID_MOCK_AMOUNT",
+  "message": "La cantidad debe ser un número entero mayor a 0",
+  "details": {
+    "name": "AppError",
+    "stack": "..."
+  }
+}
+```
+
+Esta información facilita el diagnóstico durante el desarrollo.
+
+---
+
+# 🔐 Errores en producción
+
+En producción no se exponen detalles internos sensibles.
+
+La respuesta mantiene solamente la información necesaria para el cliente:
+
+```json
+{
+  "status": "error",
+  "error": "FORBIDDEN",
+  "message": "No tenés permisos para realizar esta operación"
+}
+```
+
+---
+
+# 🌐 Rutas inexistentes
+
+ShipNow posee un middleware específico para manejar rutas que no existen.
+
+Archivo:
+
+```text
+src/middleware/notFound.middleware.js
+```
+
+Cuando se solicita una ruta inexistente, el middleware genera:
+
+```text
+ROUTE_NOT_FOUND
+```
+
+La respuesta utiliza HTTP `404`.
+
+Ejemplo:
+
+```json
+{
+  "status": "error",
+  "error": "ROUTE_NOT_FOUND",
+  "message": "La ruta solicitada no existe"
+}
+```
+
+El error luego es procesado por el middleware centralizado.
+
+---
+
+# 🧠 Responsabilidad de los Services
+
+Los Services son responsables de detectar errores relacionados con las reglas de negocio.
+
+Algunos ejemplos:
+
+```text
+Usuario inexistente
+        ↓
+USER_NOT_FOUND
+
+Email duplicado
+        ↓
+USER_ALREADY_EXISTS
+
+Rol inválido
+        ↓
+INVALID_USER_ROLE
+
+Pedido inexistente
+        ↓
+ORDER_NOT_FOUND
+
+Items faltantes
+        ↓
+ORDER_ITEMS_REQUIRED
+
+Estado inválido
+        ↓
+INVALID_ORDER_STATUS
+
+Entrega inexistente
+        ↓
+DELIVERY_NOT_FOUND
+
+Cantidad de mocks inválida
+        ↓
+INVALID_MOCK_AMOUNT
+```
+
+Los Controllers no necesitan conocer cómo se construyen estas respuestas.
+
+Simplemente delegan el error:
+
+```js
+next(error);
+```
+
+---
+
+# 🗄️ Errores de persistencia
+
+Los Services de Mocking también contemplan errores provenientes de las operaciones de MongoDB.
+
+Cuando una operación de persistencia falla, el error se transforma en:
+
+```text
+DATABASE_ERROR
+```
+
+Esto permite evitar la exposición directa de errores internos de MongoDB al cliente.
+
+La respuesta mantiene el formato estándar de la API.
+
+---
+
+# 🔄 Flujo completo de manejo de errores
+
+Ejemplo de un pedido inexistente:
+
+```text
+GET /api/orders/:id
+        ↓
+orders.router.js
+        ↓
+orders.controller.js
+        ↓
+order.service.js
+        ↓
+order.repository.js
+        ↓
+No existe el pedido
+        ↓
+createAppError("ORDER_NOT_FOUND")
+        ↓
+next(error)
+        ↓
+error.middleware.js
+        ↓
+HTTP 404
+```
+
+Respuesta:
+
+```json
+{
+  "status": "error",
+  "error": "ORDER_NOT_FOUND",
+  "message": "No se encontró el pedido solicitado"
+}
+```
 
 ---
 
@@ -824,12 +1158,6 @@ src/config/database.js
 La URI de conexión se obtiene desde:
 
 ```text
-process.env.MONGODB_URI
-```
-
-o, mediante la configuración central:
-
-```text
 config.mongoUri
 ```
 
@@ -859,38 +1187,6 @@ NODE_ENV
 ```
 
 Si alguna de estas variables no está configurada, la aplicación genera un error durante el inicio.
-
----
-
-# 🚨 Manejo centralizado de errores
-
-ShipNow utiliza un middleware centralizado:
-
-```text
-src/middleware/error.middleware.js
-```
-
-Los Controllers utilizan:
-
-```js
-next(error);
-```
-
-para delegar los errores al middleware.
-
-El middleware determina el código HTTP utilizando:
-
-```text
-error.statusCode
-```
-
-Cuando no se especifica un código, utiliza:
-
-```text
-500
-```
-
-De esta forma se evita repetir lógica de manejo de errores en cada Controller.
 
 ---
 
@@ -1020,7 +1316,7 @@ POST /api/mocks/seed
 
 Durante el desarrollo se probaron diferentes escenarios.
 
-### Generación de usuarios
+## Generación de usuarios
 
 ```text
 GET /api/mocks/users?qty=5
@@ -1034,7 +1330,7 @@ Resultado esperado:
 
 ---
 
-### Cantidad máxima
+## Cantidad máxima
 
 ```text
 GET /api/mocks/users?qty=51
@@ -1044,16 +1340,18 @@ Resultado:
 
 ```text
 400 Bad Request
+INVALID_MOCK_AMOUNT
 ```
 
 ---
 
-### Cantidad inválida
+## Cantidad inválida
 
 Ejemplos:
 
 ```text
 GET /api/mocks/users?qty=0
+
 GET /api/mocks/users?qty=abc
 ```
 
@@ -1061,11 +1359,12 @@ Resultado:
 
 ```text
 400 Bad Request
+INVALID_MOCK_AMOUNT
 ```
 
 ---
 
-### Generación de pedidos
+## Generación de pedidos
 
 ```text
 POST /api/mocks/orders?qty=5
@@ -1084,7 +1383,7 @@ Se verificó:
 
 ---
 
-### Persistencia de pedidos
+## Persistencia de pedidos
 
 ```text
 POST /api/mocks/orders/seed?qty=5
@@ -1094,7 +1393,7 @@ Se verificó que los pedidos fueran almacenados correctamente en MongoDB.
 
 ---
 
-### Generación de entregas
+## Generación de entregas
 
 ```text
 POST /api/mocks/deliveries?qty=5
@@ -1108,7 +1407,7 @@ Se verificó:
 
 ---
 
-### Persistencia de entregas
+## Persistencia de entregas
 
 ```text
 POST /api/mocks/deliveries/seed?qty=5
@@ -1118,7 +1417,7 @@ Se verificó que las entregas fueran almacenadas correctamente.
 
 ---
 
-### Seed completo
+## Seed completo
 
 ```text
 POST /api/mocks/seed?qty=10
@@ -1136,7 +1435,251 @@ y la coherencia de sus relaciones.
 
 ---
 
-### Populate
+# 🧪 Pruebas de manejo centralizado de errores
+
+## Usuario inexistente
+
+```text
+GET /api/users/000000000000000000000000
+```
+
+Resultado:
+
+```text
+404
+USER_NOT_FOUND
+```
+
+---
+
+## Email duplicado
+
+Se verificó la creación de un usuario utilizando un email existente.
+
+Resultado:
+
+```text
+409
+USER_ALREADY_EXISTS
+```
+
+---
+
+## Rol inválido
+
+Se verificó la creación de un usuario utilizando un rol no permitido.
+
+Resultado:
+
+```text
+400
+INVALID_USER_ROLE
+```
+
+---
+
+## Datos obligatorios faltantes
+
+Se verificó la creación de un usuario sin los campos requeridos.
+
+Resultado:
+
+```text
+400
+VALIDATION_ERROR
+```
+
+---
+
+## Producto inexistente
+
+```text
+GET /api/products/000000000000000000000000
+```
+
+Resultado:
+
+```text
+404
+PRODUCT_NOT_FOUND
+```
+
+---
+
+## Precio negativo
+
+Se verificó la creación de un producto con precio negativo.
+
+Resultado:
+
+```text
+400
+PRODUCT_VALIDATION_ERROR
+```
+
+---
+
+## Stock negativo
+
+Se verificó la creación de un producto con stock negativo.
+
+Resultado:
+
+```text
+400
+PRODUCT_VALIDATION_ERROR
+```
+
+---
+
+## Pedido inexistente
+
+```text
+GET /api/orders/000000000000000000000000
+```
+
+Resultado:
+
+```text
+404
+ORDER_NOT_FOUND
+```
+
+---
+
+## Pedido sin items
+
+Se verificó la creación de un pedido con un array de items vacío.
+
+Resultado:
+
+```text
+400
+ORDER_ITEMS_REQUIRED
+```
+
+---
+
+## Estado de pedido inválido
+
+Se verificó la actualización de un pedido utilizando un estado no permitido.
+
+Resultado:
+
+```text
+400
+INVALID_ORDER_STATUS
+```
+
+---
+
+## Total negativo
+
+Se verificó la creación de un pedido con un total negativo.
+
+Resultado:
+
+```text
+400
+VALIDATION_ERROR
+```
+
+---
+
+## Entrega inexistente
+
+```text
+GET /api/deliveries/000000000000000000000000
+```
+
+Resultado:
+
+```text
+404
+DELIVERY_NOT_FOUND
+```
+
+---
+
+## Estado de entrega inválido
+
+Se verificó la actualización de una entrega utilizando un estado no permitido.
+
+Resultado:
+
+```text
+400
+INVALID_DELIVERY_STATUS
+```
+
+---
+
+## Cantidad de mocks inválida
+
+Se probaron:
+
+```text
+qty=0
+qty=abc
+qty=51
+```
+
+Resultados:
+
+```text
+INVALID_MOCK_AMOUNT
+```
+
+con HTTP `400`.
+
+---
+
+## Error de base de datos
+
+Se realizó una prueba controlada provocando un error durante una operación de persistencia de Mocking.
+
+Resultado:
+
+```text
+500
+DATABASE_ERROR
+```
+
+---
+
+## Ruta inexistente
+
+Se verificó una ruta que no existe dentro de la API.
+
+Resultado:
+
+```text
+404
+ROUTE_NOT_FOUND
+```
+
+---
+
+## Protección en producción
+
+Se verificó que:
+
+```text
+NODE_ENV=production
+```
+
+deshabilite los endpoints de Mocking.
+
+Resultado:
+
+```text
+403 Forbidden
+FORBIDDEN
+```
+
+---
+
+# 🔍 Populate
 
 También se verificó que:
 
@@ -1157,24 +1700,6 @@ devuelva:
 - Información del pedido.
 - Información del cliente.
 - Información del repartidor.
-
----
-
-### Protección en producción
-
-Se verificó que:
-
-```text
-NODE_ENV=production
-```
-
-deshabilite los endpoints de Mocking.
-
-El resultado fue:
-
-```text
-403 Forbidden
-```
 
 ---
 
@@ -1242,7 +1767,7 @@ http://localhost:8080
 
 La API posee una ruta raíz para comprobar que la aplicación está funcionando correctamente.
 
-### Endpoint
+## Endpoint
 
 ```http
 GET /
@@ -1272,7 +1797,7 @@ Respuesta:
 
 # 📜 Scripts disponibles
 
-### Desarrollo
+## Desarrollo
 
 ```bash
 npm run dev
@@ -1280,7 +1805,7 @@ npm run dev
 
 Utiliza Nodemon para reiniciar automáticamente el servidor cuando se detectan cambios.
 
-### Producción / ejecución normal
+## Producción / ejecución normal
 
 ```bash
 npm start
@@ -1296,23 +1821,27 @@ node server.js
 
 # 🔐 Buenas prácticas aplicadas
 
-El proyecto aplica diferentes principios de desarrollo backend:
+El proyecto aplica diferentes principios de desarrollo backend.
 
-### Separación de responsabilidades
+## Separación de responsabilidades
 
 Cada capa posee una responsabilidad específica.
 
 ```text
 Router
+   ↓
 Controller
+   ↓
 Service
+   ↓
 Repository
+   ↓
 Model
 ```
 
 ---
 
-### Variables de entorno
+## Variables de entorno
 
 Las configuraciones específicas del entorno se almacenan en:
 
@@ -1324,7 +1853,7 @@ y no directamente en el código.
 
 ---
 
-### `.gitignore`
+## `.gitignore`
 
 Se excluyen archivos y carpetas que no deben versionarse:
 
@@ -1339,7 +1868,7 @@ errors.log
 
 ---
 
-### Constantes de dominio
+## Constantes de dominio
 
 Los estados y roles se centralizan en:
 
@@ -1363,7 +1892,7 @@ Esto evita repetir strings directamente en diferentes partes de la aplicación.
 
 ---
 
-### Manejo centralizado de errores
+## Manejo centralizado de errores
 
 Los errores son enviados mediante:
 
@@ -1377,9 +1906,23 @@ al middleware:
 error.middleware.js
 ```
 
+Los errores de dominio se crean mediante:
+
+```js
+createAppError()
+```
+
+y utilizan definiciones centralizadas en:
+
+```text
+src/utils/errors.js
+```
+
+Esto permite mantener un formato uniforme de respuesta y separar la detección del error de la construcción de la respuesta HTTP.
+
 ---
 
-### Reutilización
+## Reutilización
 
 La lógica de acceso a MongoDB se concentra en los Repositories.
 
@@ -1433,6 +1976,42 @@ Cliente
 
 ---
 
+# 🚨 Flujo de errores
+
+Cuando ocurre un error de negocio:
+
+```text
+Service
+   ↓
+createAppError()
+   ↓
+Controller
+   ↓
+next(error)
+   ↓
+error.middleware.js
+   ↓
+HTTP Error Response
+```
+
+Cuando se solicita una ruta inexistente:
+
+```text
+Request
+   ↓
+notFound.middleware.js
+   ↓
+createAppError("ROUTE_NOT_FOUND")
+   ↓
+error.middleware.js
+   ↓
+HTTP 404
+```
+
+Esto permite mantener un único punto de construcción de respuestas de error.
+
+---
+
 # 🧪 Flujo del Mocking
 
 Para un seed completo:
@@ -1467,7 +2046,9 @@ Los datos se generan respetando las relaciones entre:
 
 ```text
 Users
+   ↓
 Orders
+   ↓
 Deliveries
 ```
 
@@ -1495,6 +2076,11 @@ Los principales objetivos son aplicar:
 - Relaciones entre documentos.
 - Middleware.
 - Manejo centralizado de errores.
+- Errores personalizados.
+- Diccionario de errores.
+- Respuestas de error uniformes.
+- Validación de errores de dominio.
+- Manejo de rutas inexistentes.
 
 ---
 
@@ -1515,7 +2101,14 @@ Actualmente ShipNow cuenta con:
 - ✅ Controllers.
 - ✅ Routers.
 - ✅ Middleware de errores.
+- ✅ Middleware de rutas inexistentes.
 - ✅ Middleware de protección para Mocking.
+- ✅ `AppError`.
+- ✅ Diccionario centralizado de errores.
+- ✅ `createAppError()`.
+- ✅ Respuestas de error uniformes.
+- ✅ Manejo de errores de dominio.
+- ✅ Manejo de errores de base de datos.
 - ✅ Generación de usuarios mock.
 - ✅ Generación de pedidos mock.
 - ✅ Generación de entregas mock.

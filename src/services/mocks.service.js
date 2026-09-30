@@ -5,6 +5,7 @@ import {
 } from "../mocks/user.mock.js";
 
 import { generateMockOrders } from "../mocks/order.mock.js";
+
 import { generateMockDeliveries } from "../mocks/delivery.mock.js";
 
 import {
@@ -16,7 +17,10 @@ import { userRepository } from "../repositories/user.repository.js";
 import { orderRepository } from "../repositories/order.repository.js";
 import { deliveryRepository } from "../repositories/delivery.repository.js";
 
+import { createAppError } from "../utils/errors.js";
+
 class MocksService {
+
   validateQuantity(quantity) {
     const parsedQuantity = Number(quantity);
 
@@ -24,23 +28,17 @@ class MocksService {
       !Number.isInteger(parsedQuantity) ||
       parsedQuantity < 1
     ) {
-      const error = new Error(
+      throw createAppError(
+        "INVALID_MOCK_AMOUNT",
         "La cantidad debe ser un número entero mayor a 0"
       );
-
-      error.statusCode = 400;
-
-      throw error;
     }
 
     if (parsedQuantity > MOCKING_PARAMETERS.MAX) {
-      const error = new Error(
+      throw createAppError(
+        "INVALID_MOCK_AMOUNT",
         `La cantidad máxima permitida es ${MOCKING_PARAMETERS.MAX}`
       );
-
-      error.statusCode = 400;
-
-      throw error;
     }
 
     return parsedQuantity;
@@ -61,13 +59,10 @@ class MocksService {
       this.validateQuantity(quantity);
 
     if (validQuantity < 2) {
-      const error = new Error(
+      throw createAppError(
+        "INVALID_MOCK_AMOUNT",
         "La carga completa necesita al menos 2 usuarios"
       );
-
-      error.statusCode = 400;
-
-      throw error;
     }
 
     return generateMockUsersForSeed(
@@ -83,13 +78,10 @@ class MocksService {
       !Array.isArray(customerIds) ||
       customerIds.length === 0
     ) {
-      const error = new Error(
+      throw createAppError(
+        "VALIDATION_ERROR",
         "Se necesita al menos un customerId para generar pedidos"
       );
-
-      error.statusCode = 400;
-
-      throw error;
     }
 
     const validQuantity =
@@ -110,26 +102,20 @@ class MocksService {
       !Array.isArray(orderIds) ||
       orderIds.length === 0
     ) {
-      const error = new Error(
+      throw createAppError(
+        "VALIDATION_ERROR",
         "Se necesita al menos un orderId para generar entregas"
       );
-
-      error.statusCode = 400;
-
-      throw error;
     }
 
     if (
       !Array.isArray(driverIds) ||
       driverIds.length === 0
     ) {
-      const error = new Error(
+      throw createAppError(
+        "VALIDATION_ERROR",
         "Se necesita al menos un driverId para generar entregas"
       );
-
-      error.statusCode = 400;
-
-      throw error;
     }
 
     const validQuantity =
@@ -149,7 +135,11 @@ class MocksService {
     const users =
       generateMockUsers(validQuantity);
 
-    return userRepository.insertMany(users);
+    try {
+      return await userRepository.insertMany(users);
+    } catch (error) {
+      throw createAppError("DATABASE_ERROR");
+    }
   }
 
   async seedAll(
@@ -159,22 +149,25 @@ class MocksService {
       this.validateQuantity(quantity);
 
     if (validQuantity < 2) {
-      const error = new Error(
+      throw createAppError(
+        "INVALID_MOCK_AMOUNT",
         "La carga completa necesita al menos 2 usuarios"
       );
-
-      error.statusCode = 400;
-
-      throw error;
     }
 
     const mockUsers =
       this.generateUsersForSeed(validQuantity);
 
-    const savedUsers =
-      await userRepository.insertMany(
-        mockUsers
-      );
+    let savedUsers;
+
+    try {
+      savedUsers =
+        await userRepository.insertMany(
+          mockUsers
+        );
+    } catch (error) {
+      throw createAppError("DATABASE_ERROR");
+    }
 
     const customerIds =
       savedUsers
@@ -202,10 +195,16 @@ class MocksService {
         validQuantity
       );
 
-    const savedOrders =
-      await orderRepository.insertMany(
-        mockOrders
-      );
+    let savedOrders;
+
+    try {
+      savedOrders =
+        await orderRepository.insertMany(
+          mockOrders
+        );
+    } catch (error) {
+      throw createAppError("DATABASE_ERROR");
+    }
 
     const orderIds =
       savedOrders.map(
@@ -219,10 +218,16 @@ class MocksService {
         validQuantity
       );
 
-    const savedDeliveries =
-      await deliveryRepository.insertMany(
-        mockDeliveries
-      );
+    let savedDeliveries;
+
+    try {
+      savedDeliveries =
+        await deliveryRepository.insertMany(
+          mockDeliveries
+        );
+    } catch (error) {
+      throw createAppError("DATABASE_ERROR");
+    }
 
     return {
       users: savedUsers,
@@ -244,9 +249,13 @@ class MocksService {
         validQuantity
       );
 
-    return orderRepository.insertMany(
-      orders
-    );
+    try {
+      return await orderRepository.insertMany(
+        orders
+      );
+    } catch (error) {
+      throw createAppError("DATABASE_ERROR");
+    }
   }
 
   async seedDeliveries(
@@ -264,9 +273,13 @@ class MocksService {
         validQuantity
       );
 
-    return deliveryRepository.insertMany(
-      deliveries
-    );
+    try {
+      return await deliveryRepository.insertMany(
+        deliveries
+      );
+    } catch (error) {
+      throw createAppError("DATABASE_ERROR");
+    }
   }
 }
 

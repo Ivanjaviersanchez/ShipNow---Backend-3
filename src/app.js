@@ -2,6 +2,7 @@ import express from "express";
 
 import router from "./routes/index.js";
 
+import { notFoundHandler } from "./middleware/notFound.middleware.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
@@ -16,6 +17,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api", router);
+
+app.use(notFoundHandler);
 
 app.use(errorHandler);
 

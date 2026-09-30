@@ -1,10 +1,35 @@
-export const errorHandler = (error, req, res, next) => {
-  console.error("❌ Error:", error.message);
+import { config } from "../config/index.js";
 
-  const statusCode = error.statusCode || 500;
+export const errorHandler = (
+  error,
+  req,
+  res,
+  next
+) => {
+  console.error("❌ Error:", error);
 
-  res.status(statusCode).json({
+  const statusCode =
+    error.statusCode || 500;
+
+  const errorCode =
+    error.code || "INTERNAL_SERVER_ERROR";
+
+  const message =
+    error.message ||
+    "Ocurrió un error interno del servidor";
+
+  const response = {
     status: "error",
-    message: error.message || "Error interno del servidor"
-  });
+    error: errorCode,
+    message
+  };
+
+  if (config.nodeEnv === "development") {
+    response.details = {
+      name: error.name,
+      stack: error.stack
+    };
+  }
+
+  res.status(statusCode).json(response);
 };
