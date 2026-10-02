@@ -1,4 +1,5 @@
 import { config } from "../config/index.js";
+import logger from "../utils/logger.js";
 
 export const errorHandler = (
   error,
@@ -6,7 +7,15 @@ export const errorHandler = (
   res,
   next
 ) => {
-  console.error("❌ Error:", error);
+
+  logger.error("Error en la API", {
+    method: req.method,
+    url: req.originalUrl,
+    message: error.message,
+    stack: error.stack,
+    code: error.code,
+    statusCode: error.statusCode || 500
+  });
 
   const statusCode =
     error.statusCode || 500;

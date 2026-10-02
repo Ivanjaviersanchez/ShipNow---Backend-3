@@ -5,6 +5,7 @@ import userRouter from "./user.router.js";
 import ordersRouter from "./orders.router.js";
 import deliveriesRouter from "./deliveries.router.js";
 import mocksRouter from "./mocks.router.js";
+import loggerRouter from "./logger.router.js";
 
 const router = Router();
 
@@ -13,5 +14,6 @@ router.use("/users", userRouter);
 router.use("/orders", ordersRouter);
 router.use("/deliveries", deliveriesRouter);
 router.use("/mocks", mocksRouter);
+router.use("/", loggerRouter);
 
 export default router;
