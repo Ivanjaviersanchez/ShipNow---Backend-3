@@ -1,0 +1,488 @@
+components:
+
+  schemas:
+
+    User:
+      type: object
+      description: Usuario registrado en ShipNow.
+      properties:
+        _id:
+          type: string
+          description: ID unico del usuario en MongoDB
+          example: "68b123456789abcdef111111"
+
+        firstName:
+          type: string
+          description: Nombre del usuario
+          example: "Ivan"
+
+        lastName:
+          type: string
+          description: Apellido del usuario
+          example: "Sanchez"
+
+        email:
+          type: string
+          format: email
+          description: Email unico del usuario
+          example: "ivan@example.com"
+
+        role:
+          type: string
+          description: Rol del usuario
+          enum:
+            - admin
+            - customer
+            - driver
+            - store
+          example: customer
+
+        isAvailable:
+          type: boolean
+          description: Indica si el repartidor esta disponible
+          example: false
+
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-09-28T15:00:00.000Z"
+
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-09-28T15:00:00.000Z"
+
+    CreateUserRequest:
+      type: object
+      description: Datos necesarios para crear un usuario.
+      required:
+        - firstName
+        - lastName
+        - email
+      properties:
+        firstName:
+          type: string
+          example: "Ivan"
+
+        lastName:
+          type: string
+          example: "Sanchez"
+
+        email:
+          type: string
+          format: email
+          example: "ivan@example.com"
+
+        password:
+          type: string
+          format: password
+          writeOnly: true
+          example: "secret123"
+
+        role:
+          type: string
+          enum:
+            - admin
+            - customer
+            - driver
+            - store
+          default: customer
+          example: customer
+
+        isAvailable:
+          type: boolean
+          description: Disponible para recibir entregas. Solo aplica a usuarios con rol driver.
+          example: false
+
+    UpdateUserRequest:
+      type: object
+      description: Datos que pueden actualizarse de un usuario.
+      properties:
+        firstName:
+          type: string
+          example: "Ivan"
+
+        lastName:
+          type: string
+          example: "Sanchez"
+
+        email:
+          type: string
+          format: email
+          example: "ivan.nuevo@example.com"
+
+        role:
+          type: string
+          enum:
+            - admin
+            - customer
+            - driver
+            - store
+          example: driver
+
+        isAvailable:
+          type: boolean
+          description: Disponible para recibir entregas. Solo aplica a usuarios con rol driver.
+          example: true
+
+    OrderItem:
+      type: object
+      description: Producto incluido dentro de un pedido.
+      required:
+        - name
+        - quantity
+        - price
+      properties:
+        name:
+          type: string
+          description: Nombre del producto
+          example: "Notebook Lenovo"
+
+        quantity:
+          type: integer
+          minimum: 1
+          description: Cantidad de unidades
+          example: 2
+
+        price:
+          type: number
+          minimum: 0
+          description: Precio unitario del producto
+          example: 850000
+
+    Order:
+      type: object
+      description: Pedido registrado en ShipNow.
+      properties:
+        _id:
+          type: string
+          description: ID unico del pedido en MongoDB
+          example: "68b123456789abcdef654321"
+
+        customer:
+          type: string
+          description: ID del usuario que realiza el pedido
+          example: "68b123456789abcdef111111"
+
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/OrderItem"
+
+        deliveryAddress:
+          type: string
+          description: Direccion de entrega
+          example: "Av. Independencia 1234, Mar del Plata"
+
+        total:
+          type: number
+          minimum: 0
+          description: Importe total del pedido
+          example: 1700000
+
+        status:
+          type: string
+          description: Estado actual del pedido
+          enum:
+            - created
+            - assigned
+            - picked_up
+            - in_transit
+            - delivered
+            - cancelled
+          example: created
+
+        priority:
+          type: string
+          description: Prioridad del pedido
+          enum:
+            - low
+            - normal
+            - high
+          example: normal
+
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-09-28T15:00:00.000Z"
+
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-09-28T15:00:00.000Z"
+
+    CreateOrderRequest:
+      type: object
+      description: Datos necesarios para crear un pedido.
+      required:
+        - customer
+        - items
+        - deliveryAddress
+        - total
+      properties:
+        customer:
+          type: string
+          description: ID del usuario que realiza el pedido
+          example: "68b123456789abcdef111111"
+
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/OrderItem"
+
+        deliveryAddress:
+          type: string
+          example: "Av. Independencia 1234, Mar del Plata"
+
+        total:
+          type: number
+          minimum: 0
+          example: 1700000
+
+        priority:
+          type: string
+          enum:
+            - low
+            - normal
+            - high
+          default: normal
+          example: normal
+
+    UpdateOrderStatusRequest:
+      type: object
+      description: Nuevo estado para un pedido.
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - created
+            - assigned
+            - picked_up
+            - in_transit
+            - delivered
+            - cancelled
+          example: in_transit
+
+    Delivery:
+      type: object
+      description: Entrega asociada a un pedido y un repartidor.
+      properties:
+        _id:
+          type: string
+          description: ID unico de la entrega en MongoDB
+          example: "68b123456789abcdef123456"
+
+        order:
+          type: string
+          description: ID del pedido asociado
+          example: "68b123456789abcdef654321"
+
+        driver:
+          type: string
+          description: ID del repartidor asignado
+          example: "68b123456789abcdef111111"
+
+        status:
+          type: string
+          description: Estado actual de la entrega
+          enum:
+            - pending
+            - assigned
+            - in_transit
+            - delivered
+          example: pending
+
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-09-28T15:00:00.000Z"
+
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-09-28T15:00:00.000Z"
+
+    CreateDeliveryRequest:
+      type: object
+      description: Datos necesarios para crear una entrega.
+      required:
+        - order
+        - driver
+      properties:
+        order:
+          type: string
+          description: ID del pedido asociado
+          example: "68b123456789abcdef654321"
+
+        driver:
+          type: string
+          description: ID del repartidor asignado
+          example: "68b123456789abcdef111111"
+
+    UpdateDeliveryStatusRequest:
+      type: object
+      description: Nuevo estado para una entrega.
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - pending
+            - assigned
+            - in_transit
+            - delivered
+          example: in_transit
+
+    SuccessResponse:
+      type: object
+      description: Respuesta exitosa generica de la API.
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          example: success
+
+        message:
+          type: string
+          description: Mensaje descriptivo de la operacion realizada.
+          example: Operacion realizada correctamente
+
+
+    UserSuccessResponse:
+      type: object
+      description: Respuesta exitosa relacionada con un usuario.
+      required:
+        - status
+        - payload
+      properties:
+        status:
+          type: string
+          example: success
+
+        message:
+          type: string
+          description: Mensaje incluido en operaciones de creacion o actualizacion.
+          example: Usuario creado correctamente
+
+        payload:
+          $ref: "#/components/schemas/User"
+
+
+    UserListResponse:
+      type: object
+      description: Respuesta con una lista de usuarios.
+      required:
+        - status
+        - payload
+      properties:
+        status:
+          type: string
+          example: success
+
+        payload:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+
+
+    OrderSuccessResponse:
+      type: object
+      description: Respuesta exitosa relacionada con un pedido.
+      required:
+        - status
+        - payload
+      properties:
+        status:
+          type: string
+          example: success
+
+        message:
+          type: string
+          description: Mensaje incluido en operaciones de creacion o actualizacion.
+          example: Pedido creado correctamente
+
+        payload:
+          $ref: "#/components/schemas/Order"
+
+
+    OrderListResponse:
+      type: object
+      description: Respuesta con una lista de pedidos.
+      required:
+        - status
+        - payload
+      properties:
+        status:
+          type: string
+          example: success
+
+        payload:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+
+
+    DeliverySuccessResponse:
+      type: object
+      description: Respuesta exitosa relacionada con una entrega.
+      required:
+        - status
+        - payload
+      properties:
+        status:
+          type: string
+          example: success
+
+        message:
+          type: string
+          description: Mensaje incluido en operaciones de creacion o actualizacion.
+          example: Entrega creada correctamente
+
+        payload:
+          $ref: "#/components/schemas/Delivery"
+
+
+    DeliveryListResponse:
+      type: object
+      description: Respuesta con una lista de entregas.
+      required:
+        - status
+        - payload
+      properties:
+        status:
+          type: string
+          example: success
+
+        payload:
+          type: array
+          items:
+            $ref: "#/components/schemas/Delivery"
+
+
+    ErrorResponse:
+      type: object
+      description: Formato estandar de error utilizado por ShipNow.
+      required:
+        - status
+        - error
+        - message
+      properties:
+        status:
+          type: string
+          example: error
+
+        error:
+          type: string
+          description: Codigo interno del error.
+          example: DELIVERY_NOT_FOUND
+
+        message:
+          type: string
+          description: Descripcion del error.
+          example: No se encontro la entrega solicitada

@@ -1,0 +1,248 @@
+tags:
+  - name: Deliveries
+    description: Operaciones relacionadas con entregas
+
+paths:
+
+  /api/deliveries:
+    get:
+      tags:
+        - Deliveries
+      summary: Obtener todas las entregas
+      description: Devuelve todas las entregas registradas en ShipNow.
+      responses:
+        "200":
+          description: Lista de entregas obtenida correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryListResponse"
+              example:
+                status: success
+                payload:
+                  - _id: "68b123456789abcdef123456"
+                    order: "68b123456789abcdef654321"
+                    driver: "68b123456789abcdef111111"
+                    status: pending
+                    createdAt: "2026-09-28T15:00:00.000Z"
+                    updatedAt: "2026-09-28T15:00:00.000Z"
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: INTERNAL_SERVER_ERROR
+                message: Ocurrio un error interno del servidor
+
+    post:
+      tags:
+        - Deliveries
+      summary: Crear una entrega
+      description: Crea una nueva entrega asociada a un pedido y un repartidor. El estado inicial se establece automaticamente como pending.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDeliveryRequest"
+            example:
+              order: "68b123456789abcdef654321"
+              driver: "68b123456789abcdef111111"
+      responses:
+        "201":
+          description: Entrega creada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliverySuccessResponse"
+              example:
+                status: success
+                message: Entrega creada correctamente
+                payload:
+                  _id: "68b123456789abcdef123456"
+                  order: "68b123456789abcdef654321"
+                  driver: "68b123456789abcdef111111"
+                  status: pending
+                  createdAt: "2026-09-28T15:00:00.000Z"
+                  updatedAt: "2026-09-28T15:00:00.000Z"
+        "400":
+          description: Datos de la entrega invalidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingOrder:
+                  summary: Falta el pedido
+                  value:
+                    status: error
+                    error: VALIDATION_ERROR
+                    message: El pedido es obligatorio
+                missingDriver:
+                  summary: Falta el repartidor
+                  value:
+                    status: error
+                    error: VALIDATION_ERROR
+                    message: El repartidor es obligatorio
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/deliveries/{id}:
+    get:
+      tags:
+        - Deliveries
+      summary: Obtener una entrega por ID
+      description: Devuelve una entrega especifica utilizando su ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la entrega
+          schema:
+            type: string
+          example: "68b123456789abcdef123456"
+      responses:
+        "200":
+          description: Entrega obtenida correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliverySuccessResponse"
+              example:
+                status: success
+                payload:
+                  _id: "68b123456789abcdef123456"
+                  order: "68b123456789abcdef654321"
+                  driver: "68b123456789abcdef111111"
+                  status: pending
+                  createdAt: "2026-09-28T15:00:00.000Z"
+                  updatedAt: "2026-09-28T15:00:00.000Z"
+        "404":
+          description: Entrega no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: DELIVERY_NOT_FOUND
+                message: No se encontro la entrega solicitada
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      tags:
+        - Deliveries
+      summary: Eliminar una entrega
+      description: Elimina una entrega existente utilizando su ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la entrega
+          schema:
+            type: string
+          example: "68b123456789abcdef123456"
+      responses:
+        "200":
+          description: Entrega eliminada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+              example:
+                status: success
+                message: Entrega eliminada correctamente
+        "404":
+          description: Entrega no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: DELIVERY_NOT_FOUND
+                message: No se encontro la entrega solicitada
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/deliveries/{id}/status:
+    patch:
+      tags:
+        - Deliveries
+      summary: Actualizar el estado de una entrega
+      description: Actualiza el estado de una entrega existente.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la entrega
+          schema:
+            type: string
+          example: "68b123456789abcdef123456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDeliveryStatusRequest"
+            example:
+              status: in_transit
+      responses:
+        "200":
+          description: Estado de la entrega actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliverySuccessResponse"
+              example:
+                status: success
+                message: Estado de la entrega actualizado correctamente
+                payload:
+                  _id: "68b123456789abcdef123456"
+                  order: "68b123456789abcdef654321"
+                  driver: "68b123456789abcdef111111"
+                  status: in_transit
+                  createdAt: "2026-09-28T15:00:00.000Z"
+                  updatedAt: "2026-09-28T16:00:00.000Z"
+        "400":
+          description: Estado de entrega invalido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: INVALID_DELIVERY_STATUS
+                message: El estado de la entrega no es valido
+        "404":
+          description: Entrega no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: DELIVERY_NOT_FOUND
+                message: No se encontro la entrega solicitada
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

@@ -2,7 +2,18 @@
 
 API backend desarrollada con **Node.js, Express y MongoDB** para la gestión de una plataforma de logística y envíos llamada **ShipNow**.
 
-El proyecto forma parte del curso **Backend 3 de Coderhouse** y tiene como objetivo aplicar arquitectura por capas, separación de responsabilidades, configuración mediante variables de entorno, persistencia con MongoDB, generación de datos de prueba mediante Mocking, manejo centralizado de errores y logging profesional mediante Winston.
+El proyecto forma parte del curso **Backend 3 de Coderhouse** y tiene como objetivo aplicar:
+
+- Arquitectura por capas.
+- Separación de responsabilidades.
+- Configuración mediante variables de entorno.
+- Persistencia con MongoDB y Mongoose.
+- Repositories y Services.
+- Controllers y Routers.
+- Mocking y generación de datos de prueba.
+- Manejo centralizado de errores.
+- Logging profesional mediante Winston.
+- Documentación de API mediante OpenAPI y Swagger UI.
 
 ---
 
@@ -17,15 +28,15 @@ ShipNow permite gestionar diferentes entidades relacionadas con una plataforma l
 - 🧪 Datos simulados mediante Mocking
 - 📋 Logs de aplicación y errores
 
-El proyecto está organizado utilizando una arquitectura por capas para facilitar:
+El proyecto utiliza una arquitectura por capas para facilitar:
 
-- Mantenimiento
-- Escalabilidad
-- Reutilización de código
-- Testeo
-- Trabajo en equipo
-- Evolución futura de la aplicación
-- Observabilidad de la aplicación
+- Mantenimiento.
+- Escalabilidad.
+- Reutilización de código.
+- Testeo.
+- Trabajo en equipo.
+- Evolución futura de la aplicación.
+- Separación clara de responsabilidades.
 
 ---
 
@@ -38,7 +49,7 @@ Request HTTP
      ↓
    Router
      ↓
-  Controller
+ Controller
      ↓
    Service
      ↓
@@ -53,7 +64,7 @@ Request HTTP
 
 Se encarga de definir las rutas y conectar cada endpoint con el controlador correspondiente.
 
-Los routers no contienen lógica de negocio ni consultas directas a MongoDB.
+Los Routers no contienen lógica de negocio ni consultas directas a MongoDB.
 
 ---
 
@@ -66,7 +77,6 @@ Se encarga de:
 - Llamar al Service correspondiente.
 - Construir la respuesta HTTP.
 - Delegar los errores al middleware centralizado mediante `next(error)`.
-- Registrar información relevante mediante el logger cuando corresponde.
 
 Los Controllers no contienen consultas directas a MongoDB ni lógica de negocio compleja.
 
@@ -126,7 +136,7 @@ El logger se encuentra en:
 src/utils/logger.js
 ```
 
-Su objetivo es centralizar los registros de la aplicación y permitir:
+Permite:
 
 - Diagnóstico durante el desarrollo.
 - Seguimiento de operaciones.
@@ -135,6 +145,7 @@ Su objetivo es centralizar los registros de la aplicación y permitir:
 - Persistencia de errores.
 - Rotación automática de archivos de log.
 - Diferenciación de niveles según el entorno.
+- Diferenciación visual de los niveles mediante colores en la salida de consola.
 
 ---
 
@@ -159,6 +170,15 @@ ShipNow/
 │   │   ├── deliveries.controller.js
 │   │   ├── mocks.controller.js
 │   │   └── logger.controller.js
+│   │
+│   ├── docs/
+│   │   ├── swagger.config.js
+│   │   ├── schemas.yaml
+│   │   ├── users.yaml
+│   │   ├── orders.yaml
+│   │   ├── deliveries.yaml
+│   │   ├── mocks.yaml
+│   │   └── logger.yaml
 │   │
 │   ├── middleware/
 │   │   ├── error.middleware.js
@@ -282,14 +302,14 @@ Los pedidos representan las órdenes que deben ser procesadas y posteriormente e
 
 Cada pedido posee:
 
-- Cliente
-- Productos/items
-- Dirección de entrega
-- Total
-- Estado
-- Prioridad
-- Fecha de creación
-- Fecha de actualización
+- Cliente.
+- Productos/items.
+- Dirección de entrega.
+- Total.
+- Estado.
+- Prioridad.
+- Fecha de creación.
+- Fecha de actualización.
 
 Los estados disponibles son:
 
@@ -312,13 +332,7 @@ high
 
 El campo `customer` referencia a un documento de la colección de usuarios.
 
-Los pedidos utilizan referencias de MongoDB mediante:
-
-```text
-ObjectId
-```
-
-y posteriormente pueden ser obtenidos mediante `populate`.
+Los pedidos utilizan referencias de MongoDB mediante `ObjectId`.
 
 ---
 
@@ -328,11 +342,11 @@ Las entregas representan el proceso de distribución de un pedido.
 
 Cada entrega contiene:
 
-- Pedido asociado
-- Repartidor asociado
-- Estado
-- Fecha de creación
-- Fecha de actualización
+- Pedido asociado.
+- Repartidor asociado.
+- Estado.
+- Fecha de creación.
+- Fecha de actualización.
 
 Los estados disponibles son:
 
@@ -353,7 +367,7 @@ En el flujo de Mocking, el campo `driver` se asigna utilizando usuarios con rol:
 driver
 ```
 
-Las entregas utilizan `populate` para obtener información relacionada del pedido y del repartidor.
+Las relaciones pueden ser obtenidas mediante `populate`.
 
 ---
 
@@ -419,13 +433,11 @@ Los endpoints de Mocking permiten generar hasta:
 
 Si se solicita una cantidad superior, la API devuelve un error HTTP `400`.
 
-Por ejemplo:
+Ejemplo:
 
-```text
+```http
 GET /api/mocks/users?qty=51
 ```
-
-devuelve un error indicando que la cantidad máxima permitida es 50.
 
 ---
 
@@ -449,9 +461,7 @@ También puede especificarse la cantidad:
 GET /api/mocks/users?qty=5
 ```
 
-Estos datos son simulados y **no se guardan en MongoDB**.
-
-El password no se expone en la respuesta.
+Estos datos son simulados y no se guardan en MongoDB.
 
 ---
 
@@ -508,26 +518,18 @@ Ejemplo:
 }
 ```
 
-El Service utiliza esos IDs para generar pedidos relacionados con usuarios existentes.
-
 Los pedidos generados incluyen:
 
-- Cliente
-- Items
-- Cantidades
-- Precios
-- Total
-- Dirección
-- Estado
-- Prioridad
+- Cliente.
+- Items.
+- Cantidades.
+- Precios.
+- Total.
+- Dirección.
+- Estado.
+- Prioridad.
 
-El total se calcula a partir de:
-
-```text
-precio × cantidad
-```
-
-Los datos generados mediante este endpoint **no se guardan en MongoDB**.
+Los datos generados mediante este endpoint no se guardan en MongoDB.
 
 ---
 
@@ -608,7 +610,7 @@ Delivery
 Driver
 ```
 
-Las entregas generadas mediante este endpoint **no se guardan en MongoDB**.
+Las entregas generadas mediante este endpoint no se guardan en MongoDB.
 
 ---
 
@@ -673,15 +675,13 @@ Pedidos
 Entregas
 ```
 
-Es decir, las relaciones se generan de forma coherente.
+Las relaciones se generan de forma coherente.
 
 ---
 
 # 🔒 Protección del módulo Mocking
 
-El módulo de Mocking está protegido mediante un middleware.
-
-Archivo:
+El módulo de Mocking está protegido mediante:
 
 ```text
 src/middleware/mocks.middleware.js
@@ -695,19 +695,9 @@ NODE_ENV=production
 
 los endpoints de Mocking quedan deshabilitados.
 
-Por ejemplo:
+La API devuelve HTTP `403` con una respuesta centralizada.
 
-```http
-GET /api/mocks/users?qty=2
-```
-
-devuelve HTTP:
-
-```text
-403 Forbidden
-```
-
-con una respuesta centralizada:
+Ejemplo:
 
 ```json
 {
@@ -735,6 +725,8 @@ Service / Middleware
     next(error)
         ↓
 error.middleware.js
+        ↓
+      Logger
         ↓
  HTTP Response
 ```
@@ -822,6 +814,8 @@ FORBIDDEN
 
 # 📋 Formato estándar de errores
 
+Las respuestas de error utilizan un formato uniforme:
+
 ```json
 {
   "status": "error",
@@ -829,6 +823,8 @@ FORBIDDEN
   "message": "Mensaje claro para el cliente"
 }
 ```
+
+En entorno `development` pueden incluir información adicional para facilitar el diagnóstico.
 
 ---
 
@@ -852,138 +848,18 @@ La respuesta utiliza HTTP `404`.
 
 ---
 
-# ⚙️ Variables de entorno
-
-Archivo:
-
-```text
-.env
-```
-
-Ejemplo:
-
-```env
-PORT=8080
-MONGODB_URI=mongodb://127.0.0.1:27017/shipnow
-NODE_ENV=development
-```
-
-El archivo `.env` no debe subirse al repositorio.
-
-Para indicar las variables necesarias se utiliza:
-
-```text
-.env.example
-```
-
-Ejemplo:
-
-```env
-PORT=
-MONGODB_URI=
-NODE_ENV=
-```
-
----
-
-# 🗄️ MongoDB
-
-La aplicación utiliza:
-
-```text
-MongoDB
-```
-
-con:
-
-```text
-Mongoose
-```
-
-La conexión se encuentra centralizada en:
-
-```text
-src/config/database.js
-```
-
----
-
-# 🌐 Rutas principales
-
-Todas las rutas se centralizan en:
-
-```text
-src/routes/index.js
-```
-
-La aplicación utiliza el prefijo:
-
-```text
-/api
-```
-
-Las rutas principales son:
-
-```text
-/api/products
-/api/users
-/api/orders
-/api/deliveries
-/api/mocks
-/api/loggerTest
-```
-
----
-
-# 📋 Endpoints
-
-## Productos
-
-```text
-GET    /api/products
-GET    /api/products/:id
-POST   /api/products
-PUT    /api/products/:id
-DELETE /api/products/:id
-```
-
-## Usuarios
-
-```text
-GET    /api/users
-GET    /api/users/:id
-POST   /api/users
-PUT    /api/users/:id
-DELETE /api/users/:id
-```
-
-## Pedidos
-
-```text
-GET    /api/orders
-GET    /api/orders/:id
-POST   /api/orders
-PUT    /api/orders/:id
-DELETE /api/orders/:id
-```
-
-## Entregas
-
-```text
-GET    /api/deliveries
-GET    /api/deliveries/:id
-POST   /api/deliveries
-PUT    /api/deliveries/:id
-DELETE /api/deliveries/:id
-```
-
----
-
 # 📋 Logging con Winston
 
 A partir de la Pre-entrega 4, ShipNow incorpora un sistema profesional de logging mediante **Winston**.
 
-El objetivo del logging es permitir observar el comportamiento de la aplicación, facilitar el diagnóstico de problemas y conservar información importante sobre errores.
+El objetivo del logging es permitir:
+
+- Observar el comportamiento de la aplicación.
+- Facilitar el diagnóstico de problemas.
+- Conservar información importante sobre errores.
+- Registrar operaciones relevantes.
+- Mantener archivos de errores históricos.
+- Diferenciar visualmente los niveles de log en consola.
 
 El logger está centralizado en:
 
@@ -1000,20 +876,6 @@ Las dependencias utilizadas son:
 ```text
 winston
 winston-daily-rotate-file
-```
-
-Versiones utilizadas:
-
-```text
-winston: 3.19.0
-winston-daily-rotate-file: 5.0.0
-```
-
-Instalación:
-
-```bash
-npm install winston
-npm install winston-daily-rotate-file
 ```
 
 ---
@@ -1062,6 +924,27 @@ Errores que afectan una operación determinada.
 ## `fatal`
 
 Errores críticos que requieren especial atención.
+
+---
+
+# 🎨 Colores del Logger
+
+Durante el desarrollo, los niveles del logger se muestran con colores diferenciados en la consola para facilitar su identificación visual.
+
+La configuración se realiza mediante `winston.format.colorize()` y colores personalizados para los niveles:
+
+```text
+fatal
+error
+warning
+info
+http
+debug
+```
+
+Los colores se aplican únicamente a la salida de consola.
+
+Los archivos persistidos mantienen el formato JSON para facilitar su procesamiento y análisis.
 
 ---
 
@@ -1125,48 +1008,18 @@ Formato:
 logs/error-YYYY-MM-DD.log
 ```
 
-El archivo contiene los niveles:
+Los archivos contienen los niveles:
 
 ```text
 error
 fatal
 ```
 
-Ejemplo:
+Los archivos se rotan diariamente.
 
-```json
-{
-  "level": "error",
-  "message": "TEST ERROR",
-  "timestamp": "2026-09-30 23:03:36"
-}
-```
+La retención configurada es de 14 días.
 
-Y:
-
-```json
-{
-  "level": "fatal",
-  "message": "TEST FATAL",
-  "timestamp": "2026-09-30 23:03:36"
-}
-```
-
----
-
-# 🔄 Rotación de archivos
-
-Los archivos de errores utilizan rotación diaria.
-
-Ejemplo:
-
-```text
-error-2026-09-30.log
-error-2026-10-01.log
-error-2026-10-02.log
-```
-
-Los archivos antiguos se eliminan automáticamente según la política configurada.
+La carpeta `logs/` está incluida en `.gitignore` y no se versiona en Git.
 
 ---
 
@@ -1195,7 +1048,7 @@ El logger está integrado con:
 src/middleware/error.middleware.js
 ```
 
-Cuando ocurre un error, se registra información relevante como:
+Cuando ocurre un error se registra información relevante como:
 
 ```text
 Código del error
@@ -1207,30 +1060,21 @@ Stack Trace
 Timestamp
 ```
 
-Ejemplo:
-
-```json
-{
-  "code": "ROUTE_NOT_FOUND",
-  "level": "error",
-  "message": "Error en la API La ruta solicitada no existe",
-  "method": "GET",
-  "statusCode": 404,
-  "url": "/api/ruta-que-no-existe"
-}
-```
+Esto permite mantener un registro centralizado de los errores de la API.
 
 ---
 
 # 🧪 Endpoint de prueba del Logger
 
-Para verificar que los seis niveles funcionan correctamente existe:
+Para verificar el funcionamiento del sistema de logging existe:
 
 ```http
 GET /api/loggerTest
 ```
 
-Este endpoint genera:
+Este endpoint se utiliza como herramienta de validación del logger y no representa una funcionalidad de negocio.
+
+La prueba ejecuta los diferentes niveles:
 
 ```text
 debug
@@ -1241,153 +1085,447 @@ error
 fatal
 ```
 
-Ejemplo:
-
-```text
-GET http://localhost:8080/api/loggerTest
-```
-
-Respuesta:
+Respuesta HTTP real:
 
 ```json
 {
   "status": "success",
   "message": "Logger test ejecutado correctamente",
-  "levels": {
-    "debug": true,
-    "http": true,
-    "info": true,
-    "warning": true,
-    "error": true,
-    "fatal": true
-  }
+  "levels": [
+    "debug",
+    "http",
+    "info",
+    "warning",
+    "error",
+    "fatal"
+  ]
 }
 ```
 
 ---
 
-# 🧪 Prueba del Logger
+# 📚 Documentación de la API con Swagger
 
-Durante la Pre-entrega 4 se verificó:
+A partir de la Pre-entrega 5, ShipNow incorpora documentación interactiva mediante **OpenAPI 3.0 y Swagger UI**.
+
+La documentación permite consultar y probar los principales endpoints de la API desde el navegador.
+
+La configuración se encuentra separada de las rutas en:
+
+```text
+src/docs/swagger.config.js
+```
+
+Los archivos de documentación OpenAPI se encuentran en:
+
+```text
+src/docs/
+```
+
+Incluyen:
+
+```text
+swagger.config.js
+schemas.yaml
+users.yaml
+orders.yaml
+deliveries.yaml
+mocks.yaml
+logger.yaml
+```
+
+---
+
+# 🌐 Swagger UI
+
+La documentación interactiva está disponible en:
+
+```text
+http://localhost:8080/api/docs
+```
+
+Swagger documenta los siguientes grupos:
+
+```text
+Users
+Orders
+Deliveries
+Mocks
+Logger
+```
+
+La documentación incluye:
+
+- Métodos HTTP.
+- Rutas.
+- Parámetros.
+- Request bodies.
+- Respuestas exitosas.
+- Respuestas de error.
+- Ejemplos.
+- Schemas reutilizables.
+- Estados y valores permitidos.
+
+---
+
+# 👤 Documentación de Users
+
+Endpoints documentados:
+
+```text
+GET    /api/users
+GET    /api/users/:id
+POST   /api/users
+PUT    /api/users/:id
+DELETE /api/users/:id
+```
+
+---
+
+# 🛒 Documentación de Orders
+
+Endpoints documentados:
+
+```text
+GET    /api/orders
+GET    /api/orders/:id
+POST   /api/orders
+PATCH  /api/orders/:id/status
+DELETE /api/orders/:id
+```
+
+El endpoint de actualización utiliza:
+
+```http
+PATCH /api/orders/:id/status
+```
+
+y recibe:
+
+```json
+{
+  "status": "in_transit"
+}
+```
+
+Estados válidos:
+
+```text
+created
+assigned
+picked_up
+in_transit
+delivered
+cancelled
+```
+
+---
+
+# 🚚 Documentación de Deliveries
+
+Endpoints documentados:
+
+```text
+GET    /api/deliveries
+GET    /api/deliveries/:id
+POST   /api/deliveries
+PATCH  /api/deliveries/:id/status
+DELETE /api/deliveries/:id
+```
+
+El endpoint de actualización utiliza:
+
+```http
+PATCH /api/deliveries/:id/status
+```
+
+y recibe:
+
+```json
+{
+  "status": "in_transit"
+}
+```
+
+Estados válidos:
+
+```text
+pending
+assigned
+in_transit
+delivered
+```
+
+---
+
+# 🧪 Documentación de Mocks
+
+Swagger documenta las operaciones de generación y persistencia de datos de prueba:
+
+```text
+GET  /api/mocks/users
+POST /api/mocks/users
+POST /api/mocks/orders
+POST /api/mocks/orders/seed
+POST /api/mocks/deliveries
+POST /api/mocks/deliveries/seed
+POST /api/mocks/seed
+```
+
+Los endpoints utilizan el parámetro:
+
+```text
+qty
+```
+
+con:
+
+```text
+DEFAULT = 10
+MAX = 50
+```
+
+Los errores relacionados con cantidades inválidas utilizan:
+
+```text
+INVALID_MOCK_AMOUNT
+```
+
+---
+
+# 🧩 Schemas reutilizables
+
+Swagger utiliza schemas OpenAPI reutilizables para evitar duplicación y mantener consistencia.
+
+Entre ellos:
+
+```text
+User
+CreateUserRequest
+UpdateUserRequest
+OrderItem
+Order
+CreateOrderRequest
+UpdateOrderStatusRequest
+Delivery
+CreateDeliveryRequest
+UpdateDeliveryStatusRequest
+SuccessResponse
+UserSuccessResponse
+UserListResponse
+OrderSuccessResponse
+OrderListResponse
+DeliverySuccessResponse
+DeliveryListResponse
+ErrorResponse
+```
+
+Los schemas se encuentran en:
+
+```text
+src/docs/schemas.yaml
+```
+
+Las referencias reutilizables utilizan `$ref` de OpenAPI.
+
+Ejemplo:
+
+```yaml
+$ref: "#/components/schemas/ErrorResponse"
+```
+
+---
+
+# 🧪 Consistencia de la documentación
+
+La documentación Swagger fue realizada sobre las rutas reales de la aplicación.
+
+Se documentan:
+
+- Paths existentes.
+- Métodos HTTP reales.
+- Parámetros reales.
+- Request bodies utilizados por los Controllers.
+- Respuestas reales.
+- Estados válidos.
+- Errores definidos por `errors.js`.
+- Schemas reutilizables.
+- Ejemplos de respuestas.
+
+No se agregan endpoints ficticios únicamente para documentación.
+
+---
+
+# 🗄️ MongoDB
+
+La aplicación utiliza:
+
+```text
+MongoDB
+```
+
+con:
+
+```text
+Mongoose
+```
+
+La conexión se encuentra centralizada en:
+
+```text
+src/config/database.js
+```
+
+Por defecto, en desarrollo se utiliza:
+
+```text
+mongodb://127.0.0.1:27017/shipnow
+```
+
+---
+
+# ⚙️ Variables de entorno
+
+La configuración utiliza:
+
+```text
+.env
+```
+
+Ejemplo:
+
+```env
+PORT=8080
+MONGODB_URI=mongodb://127.0.0.1:27017/shipnow
+NODE_ENV=development
+```
+
+El archivo `.env` no debe subirse al repositorio.
+
+Para indicar las variables necesarias se utiliza:
+
+```text
+.env.example
+```
+
+Ejemplo:
+
+```env
+PORT=
+MONGODB_URI=
+NODE_ENV=
+```
+
+---
+
+# 🌐 Rutas principales
+
+Todas las rutas se centralizan en:
+
+```text
+src/routes/index.js
+```
+
+La API utiliza el prefijo:
+
+```text
+/api
+```
+
+Las principales rutas son:
+
+```text
+/api/products
+/api/users
+/api/orders
+/api/deliveries
+/api/mocks
+/api/loggerTest
+```
+
+La documentación se encuentra fuera del prefijo general de la API:
+
+```text
+/api/docs
+```
+
+---
+
+# 📋 Endpoints
+
+## Productos
+
+```text
+GET    /api/products
+GET    /api/products/:id
+POST   /api/products
+PUT    /api/products/:id
+DELETE /api/products/:id
+```
+
+## Usuarios
+
+```text
+GET    /api/users
+GET    /api/users/:id
+POST   /api/users
+PUT    /api/users/:id
+DELETE /api/users/:id
+```
+
+## Pedidos
+
+```text
+GET    /api/orders
+GET    /api/orders/:id
+POST   /api/orders
+PATCH  /api/orders/:id/status
+DELETE /api/orders/:id
+```
+
+## Entregas
+
+```text
+GET    /api/deliveries
+GET    /api/deliveries/:id
+POST   /api/deliveries
+PATCH  /api/deliveries/:id/status
+DELETE /api/deliveries/:id
+```
+
+## Mocking
+
+```text
+GET  /api/mocks/users
+POST /api/mocks/users
+POST /api/mocks/orders
+POST /api/mocks/orders/seed
+POST /api/mocks/deliveries
+POST /api/mocks/deliveries/seed
+POST /api/mocks/seed
+```
+
+## Logger
 
 ```text
 GET /api/loggerTest
 ```
 
-La consola mostró correctamente:
-
-```text
-[debug] Logger test - nivel debug
-[http] Logger test - nivel http
-[info] Logger test - nivel info
-[warning] Logger test - nivel warning
-[error] Logger test - nivel error
-[fatal] Logger test - nivel fatal
-```
-
----
-
-# 🧪 Prueba de persistencia
-
-También se verificó que:
-
-```text
-error
-fatal
-```
-
-se almacenen correctamente en:
-
-```text
-logs/error-YYYY-MM-DD.log
-```
-
-Ejemplo:
-
-```json
-{"level":"error","message":"TEST ERROR","timestamp":"2026-09-30 23:03:36"}
-{"level":"fatal","message":"TEST FATAL","timestamp":"2026-09-30 23:03:36"}
-```
-
----
-
-# 🧪 Prueba de integración con errores
-
-Se verificó una ruta inexistente:
-
-```text
-GET /api/ruta-que-no-existe
-```
-
-Resultado:
-
-```text
-ROUTE_NOT_FOUND
-```
-
-También se verificó:
-
-```text
-GET /api/mocks/users?qty=0
-```
-
-Resultado:
-
-```text
-INVALID_MOCK_AMOUNT
-```
-
-Ambos errores fueron registrados mediante el sistema centralizado de logging.
-
----
-
-# 🧪 Pruebas de manejo centralizado de errores
-
-Se probaron diferentes escenarios:
-
-```text
-USER_NOT_FOUND
-USER_ALREADY_EXISTS
-INVALID_USER_ROLE
-VALIDATION_ERROR
-PRODUCT_NOT_FOUND
-PRODUCT_VALIDATION_ERROR
-ORDER_NOT_FOUND
-ORDER_ITEMS_REQUIRED
-INVALID_ORDER_STATUS
-DELIVERY_NOT_FOUND
-INVALID_DELIVERY_STATUS
-INVALID_MOCK_AMOUNT
-DATABASE_ERROR
-ROUTE_NOT_FOUND
-FORBIDDEN
-```
-
-Los errores fueron devueltos mediante el middleware centralizado.
-
 ---
 
 # 🔍 Populate
 
-También se verificó que:
+Las relaciones entre documentos utilizan referencias de MongoDB y pueden ser obtenidas mediante `populate`.
 
-```text
-GET /api/orders
-```
+Los pedidos pueden obtener información relacionada con el cliente.
 
-devuelva los datos del cliente asociado.
+Las entregas pueden obtener información relacionada con:
 
-Y que:
+- Pedido.
+- Cliente.
+- Repartidor.
 
-```text
-GET /api/deliveries
-```
-
-devuelva:
-
-- Información del pedido.
-- Información del cliente.
-- Información del repartidor.
+Esto permite trabajar con documentos relacionados sin perder la separación entre los diferentes modelos.
 
 ---
 
@@ -1427,6 +1565,8 @@ MONGODB_URI=mongodb://127.0.0.1:27017/shipnow
 NODE_ENV=development
 ```
 
+Verificar que MongoDB se encuentre disponible.
+
 ---
 
 # ▶️ Ejecución
@@ -1447,6 +1587,12 @@ El servidor se ejecuta por defecto en:
 
 ```text
 http://localhost:8080
+```
+
+Swagger UI:
+
+```text
+http://localhost:8080/api/docs
 ```
 
 ---
@@ -1482,6 +1628,9 @@ Respuesta:
 - Nodemon
 - Winston
 - winston-daily-rotate-file
+- swagger-jsdoc
+- swagger-ui-express
+- OpenAPI 3.0
 
 ---
 
@@ -1510,8 +1659,6 @@ node server.js
 ---
 
 # 🔧 Buenas prácticas aplicadas
-
-El proyecto aplica diferentes principios de desarrollo backend.
 
 ## Separación de responsabilidades
 
@@ -1612,7 +1759,21 @@ error
 fatal
 ```
 
-Los errores y eventos críticos se almacenan mediante archivos rotativos.
+La salida de consola utiliza colores diferenciados por nivel para facilitar la lectura durante el desarrollo.
+
+## Documentación centralizada
+
+La documentación OpenAPI se encuentra separada de las rutas de Express:
+
+```text
+src/docs/
+```
+
+Swagger UI permite consultar y probar la API desde:
+
+```text
+/api/docs
+```
 
 ---
 
@@ -1620,7 +1781,7 @@ Los errores y eventos críticos se almacenan mediante archivos rotativos.
 
 Ejemplo:
 
-```text
+```http
 POST /api/orders
 ```
 
@@ -1688,7 +1849,7 @@ HTTP 404
 
 Para un seed completo:
 
-```text
+```http
 POST /api/mocks/seed
 ```
 
@@ -1758,6 +1919,188 @@ logs/error-YYYY-MM-DD.log
 
 ---
 
+# 🧪 Pruebas realizadas
+
+Durante el desarrollo se verificaron diferentes escenarios.
+
+## Logger
+
+```http
+GET /api/loggerTest
+```
+
+Se verificó la ejecución de:
+
+```text
+debug
+http
+info
+warning
+error
+fatal
+```
+
+También se verificó la diferenciación visual de los niveles mediante colores en la consola.
+
+Respuesta real:
+
+```json
+{
+  "status": "success",
+  "message": "Logger test ejecutado correctamente",
+  "levels": [
+    "debug",
+    "http",
+    "info",
+    "warning",
+    "error",
+    "fatal"
+  ]
+}
+```
+
+## Ruta inexistente
+
+```http
+GET /api/ruta-que-no-existe
+```
+
+Resultado:
+
+```text
+ROUTE_NOT_FOUND
+```
+
+## Cantidad inválida de Mocking
+
+```http
+GET /api/mocks/users?qty=0
+```
+
+Resultado:
+
+```text
+INVALID_MOCK_AMOUNT
+```
+
+## Cantidad superior al máximo
+
+```http
+GET /api/mocks/users?qty=51
+```
+
+Resultado:
+
+```text
+INVALID_MOCK_AMOUNT
+```
+
+## Mocking protegido en producción
+
+Con:
+
+```env
+NODE_ENV=production
+```
+
+los endpoints de Mocking responden:
+
+```text
+403 FORBIDDEN
+```
+
+## Manejo centralizado de errores
+
+Se probaron diferentes escenarios relacionados con:
+
+```text
+USER_NOT_FOUND
+USER_ALREADY_EXISTS
+INVALID_USER_ROLE
+VALIDATION_ERROR
+PRODUCT_NOT_FOUND
+PRODUCT_VALIDATION_ERROR
+ORDER_NOT_FOUND
+ORDER_ITEMS_REQUIRED
+INVALID_ORDER_STATUS
+DELIVERY_NOT_FOUND
+INVALID_DELIVERY_STATUS
+INVALID_MOCK_AMOUNT
+DATABASE_ERROR
+ROUTE_NOT_FOUND
+FORBIDDEN
+```
+
+---
+
+# 🎯 Pre-entregas implementadas
+
+## Pre-entrega 1
+
+- Arquitectura por capas.
+- Configuración centralizada.
+- Variables de entorno.
+- Constantes de dominio.
+- Controllers.
+- Services.
+- Repositories.
+- Models.
+- Routers.
+
+## Pre-entrega 2
+
+- Mocking.
+- Generación de usuarios.
+- Generación de pedidos.
+- Generación de entregas.
+- Persistencia de datos mock.
+- Seed completo.
+- Relaciones entre documentos.
+- Populate.
+- Protección del módulo Mocking.
+
+## Pre-entrega 3
+
+- Manejo centralizado de errores.
+- `AppError`.
+- Diccionario centralizado de errores.
+- `createAppError()`.
+- Respuestas de error uniformes.
+- Manejo de rutas inexistentes.
+- Validación de errores de dominio.
+
+## Pre-entrega 4
+
+- Winston.
+- Logging centralizado.
+- Seis niveles personalizados.
+- Diferenciación visual de niveles mediante colores.
+- Persistencia de errores.
+- Rotación diaria.
+- Retención de 14 días.
+- Integración con middleware global de errores.
+- Endpoint `/api/loggerTest`.
+
+## Pre-entrega 5
+
+- OpenAPI 3.0.
+- Swagger UI.
+- `swagger-jsdoc`.
+- `swagger-ui-express`.
+- Documentación interactiva.
+- Tags para Users, Orders, Deliveries, Mocks y Logger.
+- Documentación de endpoints.
+- Parámetros y request bodies.
+- Respuestas exitosas.
+- Respuestas de error.
+- Schemas reutilizables.
+- Documentación de errores.
+- Ejemplos de uso.
+- Ruta `/api/docs`.
+- Consistencia entre documentación y API real.
+
+---
+
 # 🎯 Objetivos académicos
 
 Este proyecto fue desarrollado como parte del proceso de aprendizaje de **Backend 3 de Coderhouse**.
@@ -1788,9 +2131,12 @@ Los principales objetivos son aplicar:
 - Logging centralizado.
 - Winston.
 - Niveles de logging.
+- Colores diferenciados en consola.
 - Persistencia de errores.
 - Rotación de archivos.
-- Observabilidad de la aplicación.
+- OpenAPI.
+- Swagger UI.
+- Documentación profesional de APIs.
 
 ---
 
@@ -1831,12 +2177,23 @@ Actualmente ShipNow cuenta con:
 - ✅ Protección de Mocking en producción.
 - ✅ Logger centralizado con Winston.
 - ✅ Seis niveles de logging: `debug`, `http`, `info`, `warning`, `error`, `fatal`.
+- ✅ Colores diferenciados por nivel en consola.
 - ✅ Endpoint `/api/loggerTest`.
 - ✅ Integración del logger con el middleware global de errores.
-- ✅ Persistencia de errores y eventos `fatal`.
+- ✅ Persistencia de errores.
 - ✅ Rotación diaria de archivos de log.
+- ✅ Retención de logs de errores durante 14 días.
 - ✅ Protección de archivos de log mediante `.gitignore`.
-- ✅ README documentado.
+- ✅ Documentación OpenAPI 3.0.
+- ✅ Swagger UI.
+- ✅ Documentación interactiva en `/api/docs`.
+- ✅ Schemas reutilizables.
+- ✅ Documentación de Users.
+- ✅ Documentación de Orders.
+- ✅ Documentación de Deliveries.
+- ✅ Documentación de Mocks.
+- ✅ Documentación de Logger.
+- ✅ README actualizado y sincronizado con la API real.
 
 ---
 

@@ -1,0 +1,312 @@
+paths:
+
+  /api/orders:
+    get:
+      tags:
+        - Orders
+      summary: Obtener todos los pedidos
+      description: Devuelve todos los pedidos registrados en ShipNow.
+      responses:
+        "200":
+          description: Lista de pedidos obtenida correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderListResponse"
+              example:
+                status: success
+                payload:
+                  - _id: "68b123456789abcdef654321"
+                    customer: "68b123456789abcdef111111"
+                    items:
+                      - name: "Notebook Lenovo"
+                        quantity: 2
+                        price: 850000
+                    deliveryAddress: "Av. Independencia 1234, Mar del Plata"
+                    total: 1700000
+                    status: created
+                    priority: normal
+                    createdAt: "2026-09-28T15:00:00.000Z"
+                    updatedAt: "2026-09-28T15:00:00.000Z"
+
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: INTERNAL_SERVER_ERROR
+                message: Ocurrio un error interno del servidor
+
+
+    post:
+      tags:
+        - Orders
+      summary: Crear un pedido
+      description: Crea un nuevo pedido en ShipNow. El estado inicial se establece automaticamente como created.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderRequest"
+            example:
+              customer: "68b123456789abcdef111111"
+              items:
+                - name: "Notebook Lenovo"
+                  quantity: 2
+                  price: 850000
+              deliveryAddress: "Av. Independencia 1234, Mar del Plata"
+              total: 1700000
+              priority: normal
+
+      responses:
+        "201":
+          description: Pedido creado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderSuccessResponse"
+              example:
+                status: success
+                message: Pedido creado correctamente
+                payload:
+                  _id: "68b123456789abcdef654321"
+                  customer: "68b123456789abcdef111111"
+                  items:
+                    - name: "Notebook Lenovo"
+                      quantity: 2
+                      price: 850000
+                  deliveryAddress: "Av. Independencia 1234, Mar del Plata"
+                  total: 1700000
+                  status: created
+                  priority: normal
+                  createdAt: "2026-09-28T15:00:00.000Z"
+                  updatedAt: "2026-09-28T15:00:00.000Z"
+
+        "400":
+          description: Datos del pedido invalidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+
+                customerRequired:
+                  summary: Falta el cliente
+                  value:
+                    status: error
+                    error: VALIDATION_ERROR
+                    message: El cliente es obligatorio
+
+                itemsRequired:
+                  summary: El pedido no tiene productos
+                  value:
+                    status: error
+                    error: ORDER_ITEMS_REQUIRED
+                    message: El pedido debe contener al menos un producto
+
+                deliveryAddressRequired:
+                  summary: Falta la direccion de entrega
+                  value:
+                    status: error
+                    error: VALIDATION_ERROR
+                    message: La direccion de entrega es obligatoria
+
+                invalidTotal:
+                  summary: Total invalido
+                  value:
+                    status: error
+                    error: VALIDATION_ERROR
+                    message: El total debe ser un numero mayor o igual a 0
+
+                invalidPriority:
+                  summary: Prioridad invalida
+                  value:
+                    status: error
+                    error: VALIDATION_ERROR
+                    message: La prioridad indicada no es valida
+
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+
+  /api/orders/{id}:
+    get:
+      tags:
+        - Orders
+      summary: Obtener un pedido por ID
+      description: Devuelve un pedido especifico utilizando su ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del pedido
+          schema:
+            type: string
+          example: "68b123456789abcdef654321"
+
+      responses:
+        "200":
+          description: Pedido obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderSuccessResponse"
+              example:
+                status: success
+                payload:
+                  _id: "68b123456789abcdef654321"
+                  customer: "68b123456789abcdef111111"
+                  items:
+                    - name: "Notebook Lenovo"
+                      quantity: 2
+                      price: 850000
+                  deliveryAddress: "Av. Independencia 1234, Mar del Plata"
+                  total: 1700000
+                  status: created
+                  priority: normal
+
+        "404":
+          description: Pedido no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: ORDER_NOT_FOUND
+                message: No se encontro el pedido solicitado
+
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+
+    delete:
+      tags:
+        - Orders
+      summary: Eliminar un pedido
+      description: Elimina un pedido existente utilizando su ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del pedido
+          schema:
+            type: string
+          example: "68b123456789abcdef654321"
+
+      responses:
+        "200":
+          description: Pedido eliminado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+              example:
+                status: success
+                message: Pedido eliminado correctamente
+
+        "404":
+          description: Pedido no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: ORDER_NOT_FOUND
+                message: No se encontro el pedido solicitado
+
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+
+  /api/orders/{id}/status:
+    patch:
+      tags:
+        - Orders
+      summary: Actualizar el estado de un pedido
+      description: Actualiza el estado de un pedido existente.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del pedido
+          schema:
+            type: string
+          example: "68b123456789abcdef654321"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrderStatusRequest"
+            example:
+              status: in_transit
+
+      responses:
+        "200":
+          description: Estado del pedido actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderSuccessResponse"
+              example:
+                status: success
+                message: Estado del pedido actualizado correctamente
+                payload:
+                  _id: "68b123456789abcdef654321"
+                  customer: "68b123456789abcdef111111"
+                  items:
+                    - name: "Notebook Lenovo"
+                      quantity: 2
+                      price: 850000
+                  deliveryAddress: "Av. Independencia 1234, Mar del Plata"
+                  total: 1700000
+                  status: in_transit
+                  priority: normal
+
+        "400":
+          description: Estado del pedido invalido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: INVALID_ORDER_STATUS
+                message: El estado indicado no es valido para un pedido
+
+        "404":
+          description: Pedido no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: ORDER_NOT_FOUND
+                message: No se encontro el pedido solicitado
+
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

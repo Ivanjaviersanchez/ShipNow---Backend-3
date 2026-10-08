@@ -1,0 +1,631 @@
+paths:
+
+  /api/mocks/users:
+    get:
+      tags:
+        - Mocks
+      summary: Generar usuarios mock
+      description: Genera usuarios simulados sin persistirlos en MongoDB. Por defecto genera 10 usuarios y permite especificar una cantidad mediante el parametro qty.
+      parameters:
+        - name: qty
+          in: query
+          required: false
+          description: Cantidad de usuarios a generar. El valor por defecto es 10 y el maximo permitido es 50.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          example: 5
+
+      responses:
+        "200":
+          description: Usuarios mock generados correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Usuarios mock generados correctamente
+                  quantity:
+                    type: integer
+                    example: 5
+                  payload:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+              example:
+                status: success
+                message: Usuarios mock generados correctamente
+                quantity: 5
+                payload:
+                  - firstName: "Juan"
+                    lastName: "Perez"
+                    email: "mock.user.123.0@shipnow.test"
+                    role: customer
+                    isAvailable: false
+
+        "400":
+          description: Cantidad de mocks invalida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                zero:
+                  summary: Cantidad igual a cero
+                  value:
+                    status: error
+                    error: INVALID_MOCK_AMOUNT
+                    message: La cantidad debe ser un numero entero mayor a 0
+
+                invalid:
+                  summary: Cantidad no numerica
+                  value:
+                    status: error
+                    error: INVALID_MOCK_AMOUNT
+                    message: La cantidad debe ser un numero entero mayor a 0
+
+                maximum:
+                  summary: Cantidad superior al maximo
+                  value:
+                    status: error
+                    error: INVALID_MOCK_AMOUNT
+                    message: La cantidad maxima permitida es 50
+
+        "403":
+          description: Mocking deshabilitado en produccion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: FORBIDDEN
+                message: No tenes permisos para realizar esta operacion
+
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      tags:
+        - Mocks
+      summary: Guardar usuarios mock
+      description: Genera usuarios simulados y los persiste en MongoDB. Por defecto genera 10 usuarios y permite especificar la cantidad mediante el parametro qty.
+      parameters:
+        - name: qty
+          in: query
+          required: false
+          description: Cantidad de usuarios a generar. El valor por defecto es 10 y el maximo permitido es 50.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          example: 10
+
+      responses:
+        "201":
+          description: Usuarios mock guardados correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Usuarios mock guardados correctamente
+                  quantity:
+                    type: integer
+                    example: 10
+                  payload:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+
+        "400":
+          description: Cantidad de mocks invalida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: INVALID_MOCK_AMOUNT
+                message: La cantidad debe ser un numero entero mayor a 0
+
+        "403":
+          description: Mocking deshabilitado en produccion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "500":
+          description: Error de persistencia
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: DATABASE_ERROR
+                message: Ocurrio un error al acceder a la base de datos
+
+
+  /api/mocks/orders:
+    post:
+      tags:
+        - Mocks
+      summary: Generar pedidos mock
+      description: Genera pedidos simulados sin persistirlos en MongoDB utilizando clientes existentes.
+      parameters:
+        - name: qty
+          in: query
+          required: false
+          description: Cantidad de pedidos a generar. El valor por defecto es 10 y el maximo permitido es 50.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          example: 5
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customerIds
+              properties:
+                customerIds:
+                  type: array
+                  description: IDs de usuarios que seran utilizados como clientes.
+                  items:
+                    type: string
+                  example:
+                    - "68b123456789abcdef111111"
+                    - "68b123456789abcdef222222"
+            example:
+              customerIds:
+                - "68b123456789abcdef111111"
+                - "68b123456789abcdef222222"
+
+      responses:
+        "200":
+          description: Pedidos mock generados correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Pedidos mock generados correctamente
+                  quantity:
+                    type: integer
+                    example: 5
+                  payload:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Order"
+
+        "400":
+          description: Cantidad de mocks invalida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: INVALID_MOCK_AMOUNT
+                message: La cantidad debe ser un numero entero mayor a 0
+
+        "403":
+          description: Mocking deshabilitado en produccion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+
+  /api/mocks/orders/seed:
+    post:
+      tags:
+        - Mocks
+      summary: Guardar pedidos mock
+      description: Genera pedidos simulados utilizando clientes existentes y los persiste en MongoDB.
+      parameters:
+        - name: qty
+          in: query
+          required: false
+          description: Cantidad de pedidos a generar. El valor por defecto es 10 y el maximo permitido es 50.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          example: 5
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customerIds
+              properties:
+                customerIds:
+                  type: array
+                  description: IDs de usuarios que seran utilizados como clientes.
+                  items:
+                    type: string
+                  example:
+                    - "68b123456789abcdef111111"
+                    - "68b123456789abcdef222222"
+            example:
+              customerIds:
+                - "68b123456789abcdef111111"
+                - "68b123456789abcdef222222"
+
+      responses:
+        "201":
+          description: Pedidos mock guardados correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Pedidos mock guardados correctamente
+                  quantity:
+                    type: integer
+                    example: 5
+                  payload:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Order"
+
+        "400":
+          description: Cantidad de mocks invalida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: INVALID_MOCK_AMOUNT
+                message: La cantidad debe ser un numero entero mayor a 0
+
+        "403":
+          description: Mocking deshabilitado en produccion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "500":
+          description: Error de persistencia
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: DATABASE_ERROR
+                message: Ocurrio un error al acceder a la base de datos
+
+
+  /api/mocks/deliveries:
+    post:
+      tags:
+        - Mocks
+      summary: Generar entregas mock
+      description: Genera entregas simuladas sin persistirlas en MongoDB utilizando pedidos y repartidores existentes.
+      parameters:
+        - name: qty
+          in: query
+          required: false
+          description: Cantidad de entregas a generar. El valor por defecto es 10 y el maximo permitido es 50.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          example: 5
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - orderIds
+                - driverIds
+              properties:
+                orderIds:
+                  type: array
+                  description: IDs de pedidos existentes.
+                  items:
+                    type: string
+                  example:
+                    - "68b123456789abcdef654321"
+                    - "68b123456789abcdef654322"
+                driverIds:
+                  type: array
+                  description: IDs de usuarios con rol driver.
+                  items:
+                    type: string
+                  example:
+                    - "68b123456789abcdef111111"
+                    - "68b123456789abcdef222222"
+            example:
+              orderIds:
+                - "68b123456789abcdef654321"
+                - "68b123456789abcdef654322"
+              driverIds:
+                - "68b123456789abcdef111111"
+                - "68b123456789abcdef222222"
+
+      responses:
+        "200":
+          description: Entregas mock generadas correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Entregas mock generadas correctamente
+                  quantity:
+                    type: integer
+                    example: 5
+                  payload:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Delivery"
+
+        "400":
+          description: Cantidad de mocks invalida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: INVALID_MOCK_AMOUNT
+                message: La cantidad debe ser un numero entero mayor a 0
+
+        "403":
+          description: Mocking deshabilitado en produccion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+
+  /api/mocks/deliveries/seed:
+    post:
+      tags:
+        - Mocks
+      summary: Guardar entregas mock
+      description: Genera entregas simuladas utilizando pedidos y repartidores existentes y las persiste en MongoDB.
+      parameters:
+        - name: qty
+          in: query
+          required: false
+          description: Cantidad de entregas a generar. El valor por defecto es 10 y el maximo permitido es 50.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          example: 5
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - orderIds
+                - driverIds
+              properties:
+                orderIds:
+                  type: array
+                  description: IDs de pedidos existentes.
+                  items:
+                    type: string
+                  example:
+                    - "68b123456789abcdef654321"
+                    - "68b123456789abcdef654322"
+                driverIds:
+                  type: array
+                  description: IDs de usuarios con rol driver.
+                  items:
+                    type: string
+                  example:
+                    - "68b123456789abcdef111111"
+                    - "68b123456789abcdef222222"
+            example:
+              orderIds:
+                - "68b123456789abcdef654321"
+                - "68b123456789abcdef654322"
+              driverIds:
+                - "68b123456789abcdef111111"
+                - "68b123456789abcdef222222"
+
+      responses:
+        "201":
+          description: Entregas mock guardadas correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Entregas mock guardadas correctamente
+                  quantity:
+                    type: integer
+                    example: 5
+                  payload:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Delivery"
+
+        "400":
+          description: Cantidad de mocks invalida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: INVALID_MOCK_AMOUNT
+                message: La cantidad debe ser un numero entero mayor a 0
+
+        "403":
+          description: Mocking deshabilitado en produccion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "500":
+          description: Error de persistencia
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: DATABASE_ERROR
+                message: Ocurrio un error al acceder a la base de datos
+
+
+  /api/mocks/seed:
+    post:
+      tags:
+        - Mocks
+      summary: Cargar seed completo de datos mock
+      description: Genera y persiste un conjunto completo de usuarios, pedidos y entregas manteniendo las relaciones entre las entidades.
+      parameters:
+        - name: qty
+          in: query
+          required: false
+          description: Cantidad de registros a generar para cada entidad. El valor por defecto es 10 y el maximo permitido es 50.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          example: 10
+
+      responses:
+        "201":
+          description: Datos mock cargados correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Datos mock cargados correctamente
+                  quantity:
+                    type: object
+                    properties:
+                      users:
+                        type: integer
+                        example: 10
+                      orders:
+                        type: integer
+                        example: 10
+                      deliveries:
+                        type: integer
+                        example: 10
+              example:
+                status: success
+                message: Datos mock cargados correctamente
+                quantity:
+                  users: 10
+                  orders: 10
+                  deliveries: 10
+
+        "400":
+          description: Cantidad de mocks invalida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: INVALID_MOCK_AMOUNT
+                message: La cantidad debe ser un numero entero mayor a 0
+
+        "403":
+          description: Mocking deshabilitado en produccion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "500":
+          description: Error de persistencia
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: DATABASE_ERROR
+                message: Ocurrio un error al acceder a la base de datos
