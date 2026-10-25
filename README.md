@@ -14,6 +14,8 @@ El proyecto forma parte del curso **Backend 3 de Coderhouse** y tiene como objet
 - Manejo centralizado de errores.
 - Logging profesional mediante Winston.
 - Documentación de API mediante OpenAPI y Swagger UI.
+- Pruebas funcionales automatizadas con Mocha, Chai y Supertest.
+- Aislamiento de la base de datos de testing respecto de la base de desarrollo.
 
 ---
 
@@ -224,19 +226,51 @@ ShipNow/
 │   │
 │   └── app.js
 │
+├── tests/
+│   ├── setup.js
+│   ├── setup.test.js
+│   │
+│   ├── users/
+│   │   └── users.test.js
+│   │
+│   ├── orders/
+│   │   └── orders.test.js
+│   │
+│   ├── mocks/
+│   │   └── mocks.test.js
+│   │
+│   ├── logger/
+│   │   └── logger.test.js
+│   │
+│   ├── docs/
+│   │   └── swagger.test.js
+│   │
+│   └── routes/
+│       └── notFound.test.js
+│
 ├── logs/
 │   └── error-YYYY-MM-DD.log
 │
 ├── .env
 ├── .env.example
+├── .env.test                 # Local, ignored by Git
 ├── .gitignore
+├── .mocharc.json
 ├── package.json
 ├── package-lock.json
 ├── README.md
 └── server.js
 ```
 
-> La carpeta `logs/` se genera automáticamente cuando la aplicación necesita persistir registros. Los archivos generados no se versionan en Git.
+> **Notas sobre la estructura:**
+>
+> - La carpeta `src/` contiene el código de la aplicación y mantiene la arquitectura por capas.
+> - La carpeta `tests/` contiene las pruebas funcionales automatizadas de la Pre-entrega 6.
+> - `tests/setup.js` configura el entorno de testing, prepara las colecciones y cierra la conexión de Mongoose al finalizar la suite.
+> - `.mocharc.json` centraliza la configuración de Mocha y la ejecución del setup.
+> - `.env.test` contiene la configuración local del entorno de pruebas y está excluido del repositorio mediante `.gitignore`. No debe subirse a Git.
+> - La base de datos de testing es `shipnow_test`, independiente de la base de desarrollo `shipnow`.
+> - La carpeta `logs/` se genera cuando la aplicación necesita persistir registros. Los archivos generados no se versionan en Git.
 
 ---
 
@@ -1631,6 +1665,10 @@ Respuesta:
 - swagger-jsdoc
 - swagger-ui-express
 - OpenAPI 3.0
+- Mocha
+- Chai
+- Supertest
+- cross-env
 
 ---
 
@@ -1655,6 +1693,14 @@ Ejecuta:
 ```text
 node server.js
 ```
+
+## Pruebas funcionales test
+
+```bash
+npm test
+```
+
+Ejecuta la suite de pruebas funcionales automatizadas.
 
 ---
 
@@ -1921,15 +1967,17 @@ logs/error-YYYY-MM-DD.log
 
 # 🧪 Pruebas realizadas
 
-Durante el desarrollo se verificaron diferentes escenarios.
+Durante el desarrollo de ShipNow se verificaron diferentes escenarios mediante pruebas manuales y pruebas funcionales automatizadas.
 
 ## Logger
+
+Endpoint:
 
 ```http
 GET /api/loggerTest
 ```
 
-Se verificó la ejecución de:
+Se verificó la ejecución de los seis niveles del logger:
 
 ```text
 debug
@@ -1940,9 +1988,7 @@ error
 fatal
 ```
 
-También se verificó la diferenciación visual de los niveles mediante colores en la consola.
-
-Respuesta real:
+Respuesta esperada:
 
 ```json
 {
@@ -1961,57 +2007,70 @@ Respuesta real:
 
 ## Ruta inexistente
 
+Se verificó el comportamiento de la API cuando se solicita una ruta que no existe.
+
+Ejemplo:
+
 ```http
 GET /api/ruta-que-no-existe
 ```
 
-Resultado:
+Resultado esperado:
 
-```text
-ROUTE_NOT_FOUND
-```
+- HTTP `404`.
+- Código `ROUTE_NOT_FOUND`.
+- Respuesta con el formato centralizado de errores.
 
 ## Cantidad inválida de Mocking
+
+Se verificó que la API rechace cantidades iguales a cero.
+
+Ejemplo:
 
 ```http
 GET /api/mocks/users?qty=0
 ```
 
-Resultado:
+Resultado esperado:
 
-```text
-INVALID_MOCK_AMOUNT
-```
+- HTTP `400`.
+- Código `INVALID_MOCK_AMOUNT`.
+- Mensaje: `La cantidad debe ser un número entero mayor a 0`.
 
 ## Cantidad superior al máximo
+
+Se verificó que la API rechace cantidades superiores al límite permitido de 50 registros.
+
+Ejemplo:
 
 ```http
 GET /api/mocks/users?qty=51
 ```
 
-Resultado:
+Resultado esperado:
 
-```text
-INVALID_MOCK_AMOUNT
-```
+- HTTP `400`.
+- Código `INVALID_MOCK_AMOUNT`.
+- Mensaje: `La cantidad máxima permitida es 50`.
 
 ## Mocking protegido en producción
 
-Con:
+Se verificó que los endpoints de Mocking estén protegidos cuando la aplicación se ejecuta con:
 
 ```env
 NODE_ENV=production
 ```
 
-los endpoints de Mocking responden:
+Resultado esperado:
 
-```text
-403 FORBIDDEN
-```
+- HTTP `403`.
+- Código `FORBIDDEN`.
 
 ## Manejo centralizado de errores
 
-Se probaron diferentes escenarios relacionados con:
+Se verificaron diferentes escenarios de error relacionados con las entidades y las validaciones del sistema.
+
+Entre los códigos contemplados se encuentran:
 
 ```text
 USER_NOT_FOUND
@@ -2027,9 +2086,166 @@ DELIVERY_NOT_FOUND
 INVALID_DELIVERY_STATUS
 INVALID_MOCK_AMOUNT
 DATABASE_ERROR
+INTERNAL_SERVER_ERROR
 ROUTE_NOT_FOUND
 FORBIDDEN
 ```
+
+## Pruebas funcionales automatizadas — Pre-entrega 6
+
+ShipNow incorpora una suite de pruebas funcionales automatizadas para verificar el comportamiento de los endpoints, los códigos HTTP, la persistencia de datos y las respuestas de error.
+
+### Herramientas utilizadas
+
+- **Mocha:** ejecución y organización de las pruebas.
+- **Chai:** aserciones para verificar los resultados esperados.
+- **Supertest:** envío de solicitudes HTTP a la aplicación Express.
+- **MongoDB y Mongoose:** persistencia y consulta de datos durante las pruebas.
+- **cross-env:** configuración de `NODE_ENV=test` al ejecutar la suite.
+
+### Ejecutar las pruebas
+
+Desde la raíz del proyecto:
+
+```bash
+npm test
+```
+
+El script de testing establece `NODE_ENV=test` y ejecuta Mocha.
+
+Las pruebas importan la aplicación desde `src/app.js`, sin iniciar un servidor HTTP independiente. Supertest realiza las solicitudes directamente contra la aplicación Express.
+
+### Organización de los tests
+
+```text
+tests/
+├── setup.js
+├── setup.test.js
+├── users/
+│   └── users.test.js
+├── orders/
+│   └── orders.test.js
+├── mocks/
+│   └── mocks.test.js
+├── logger/
+│   └── logger.test.js
+├── docs/
+│   └── swagger.test.js
+└── routes/
+    └── notFound.test.js
+```
+
+Responsabilidades:
+
+- `setup.js`: valida el entorno, conecta con la base de testing, prepara las colecciones y cierra la conexión al finalizar.
+- `setup.test.js`: verifica la configuración del entorno de pruebas.
+- `users.test.js`: comprueba consultas, creación de usuarios y validaciones.
+- `orders.test.js`: comprueba consultas, creación de pedidos, validaciones y estados.
+- `mocks.test.js`: verifica el rechazo de cantidades inválidas y superiores al máximo permitido.
+- `logger.test.js`: comprueba el endpoint de prueba del logger.
+- `swagger.test.js`: verifica la disponibilidad de la documentación Swagger.
+- `notFound.test.js`: comprueba la respuesta ante rutas inexistentes.
+
+### Base de datos exclusiva para testing
+
+Las pruebas utilizan una base de datos independiente de la utilizada durante el desarrollo.
+
+**Base de desarrollo:**
+
+```text
+mongodb://127.0.0.1:27017/shipnow
+```
+
+**Base de testing:**
+
+```text
+mongodb://127.0.0.1:27017/shipnow_test
+```
+
+El entorno de pruebas utiliza un archivo `.env.test` local, excluido del repositorio mediante `.gitignore`.
+
+Configuración de ejemplo:
+
+```env
+PORT=8081
+NODE_ENV=test
+MONGODB_URI_TEST=mongodb://127.0.0.1:27017/shipnow_test
+```
+
+La configuración centralizada verifica que la URI de testing apunte a la base `shipnow_test`. El setup vuelve a preparar las colecciones utilizadas por las pruebas antes de cada ejecución de la suite y cierra la conexión al finalizar.
+
+**Importante:** las pruebas deben ejecutarse mediante `npm test`. La base `shipnow` corresponde al entorno de desarrollo y no debe utilizarse para ejecutar la suite.
+
+### Escenarios automatizados cubiertos
+
+#### Usuarios
+
+- Consulta de usuarios con respuesta HTTP `200`.
+- Búsqueda de un usuario inexistente con respuesta `404 USER_NOT_FOUND`.
+- Creación y persistencia de usuarios.
+- Validación de campos obligatorios con respuesta `400 VALIDATION_ERROR`.
+- Verificación de que la contraseña no se exponga en la respuesta de creación.
+
+#### Pedidos
+
+- Consulta de pedidos con respuesta HTTP `200`.
+- Búsqueda de un pedido inexistente con respuesta `404 ORDER_NOT_FOUND`.
+- Creación y persistencia de pedidos.
+- Rechazo de pedidos incompletos.
+- Rechazo de estados de pedido inválidos con respuesta `400 INVALID_ORDER_STATUS`.
+
+#### Mocking
+
+- Rechazo de cantidades iguales a cero.
+- Rechazo de cantidades superiores al máximo permitido.
+- Verificación del código `INVALID_MOCK_AMOUNT` y de los mensajes correspondientes.
+
+#### Logger
+
+- Respuesta HTTP `200` de `/api/loggerTest`.
+- Verificación del mensaje de éxito.
+- Verificación de los seis niveles de logging informados por el endpoint.
+
+#### Swagger
+
+- Verificación de la disponibilidad de `/api/docs/`.
+- Comprobación de la respuesta HTTP `200` y del contenido de Swagger UI.
+
+#### Rutas inexistentes
+
+- Verificación de la respuesta HTTP `404`.
+- Comprobación del código `ROUTE_NOT_FOUND`.
+- Comprobación del mensaje `La ruta solicitada no existe`.
+
+#### Entorno de testing
+
+- Verificación de `NODE_ENV=test`.
+- Validación de la URI y del nombre de la base de pruebas.
+- Preparación y cierre de la conexión de Mongoose mediante los hooks de Mocha.
+
+### Formato de las respuestas de error
+
+Las pruebas comprueban las respuestas de error mediante el formato centralizado de ShipNow:
+
+```json
+{
+  "status": "error",
+  "error": "ERROR_CODE",
+  "message": "Mensaje del error"
+}
+```
+
+Se verifican tanto los códigos HTTP como los códigos de error y los mensajes correspondientes.
+
+### Repetibilidad de las pruebas
+
+La suite se ejecuta mediante:
+
+```bash
+npm test
+```
+
+El setup prepara la base de testing y cierra la conexión al finalizar. La suite debe poder ejecutarse consecutivamente con resultados consistentes, sin utilizar la base de desarrollo `shipnow`.
 
 ---
 
@@ -2099,6 +2315,24 @@ FORBIDDEN
 - Ruta `/api/docs`.
 - Consistencia entre documentación y API real.
 
+## Pre-entrega 6
+
+- Mocha, Chai y Supertest.
+- Configuración de pruebas funcionales automatizadas.
+- Script `npm test`.
+- Separación entre la base de desarrollo y la base de testing.
+- Configuración local mediante `.env.test`.
+- Validación de la URI de testing.
+- Setup y hooks para preparar y cerrar la conexión de Mongoose.
+- Pruebas funcionales de usuarios.
+- Pruebas funcionales de pedidos.
+- Validación de cantidades del módulo Mocking.
+- Prueba del endpoint del logger.
+- Prueba de disponibilidad de Swagger.
+- Prueba de rutas inexistentes.
+- Verificación de códigos HTTP, códigos de error y mensajes.
+- Preparación de la suite para ejecuciones repetibles.
+
 ---
 
 # 🎯 Objetivos académicos
@@ -2137,6 +2371,11 @@ Los principales objetivos son aplicar:
 - OpenAPI.
 - Swagger UI.
 - Documentación profesional de APIs.
+- Pruebas funcionales automatizadas.
+- Mocha, Chai y Supertest.
+- Aislamiento de la base de datos de testing.
+- Validación automatizada de respuestas HTTP y errores.
+- Configuración de entornos de prueba.
 
 ---
 
@@ -2194,6 +2433,17 @@ Actualmente ShipNow cuenta con:
 - ✅ Documentación de Mocks.
 - ✅ Documentación de Logger.
 - ✅ README actualizado y sincronizado con la API real.
+- ✅ Pruebas funcionales automatizadas con Mocha, Chai y Supertest.
+- ✅ Configuración del entorno de testing.
+- ✅ Base de datos de testing independiente: `shipnow_test`.
+- ✅ Pruebas de consulta, creación y validación de usuarios.
+- ✅ Pruebas de consulta, creación y validación de pedidos.
+- ✅ Pruebas de cantidades inválidas del módulo Mocking.
+- ✅ Prueba funcional del endpoint del logger.
+- ✅ Prueba funcional de disponibilidad de Swagger.
+- ✅ Prueba funcional de rutas inexistentes.
+- ✅ Verificación de respuestas HTTP y errores estandarizados.
+- ✅ Script `npm test`.
 
 ---
 

@@ -1,3 +1,4 @@
+
 import UserModel from "../models/user.model.js";
 
 class UserRepository {
@@ -20,7 +21,18 @@ class UserRepository {
   }
 
   async create(userData) {
-    return UserModel.create(userData);
+    const user = await UserModel.create(userData);
+
+    return {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      isAvailable: user.isAvailable,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    };
   }
 
   async insertMany(users) {

@@ -5,3 +5,5 @@ node_modules/
 npm-debug.log*
 errors.log
 logs/
+.env.test
+.env.test.local
