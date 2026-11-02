@@ -63,6 +63,64 @@ describe("Pruebas funcionales de usuarios", function () {
       expect(savedUser.firstName).to.equal("Usuario");
     });
 
+    it("debe responder 409 cuando se intenta registrar un email duplicado", async function () {
+      const userData = {
+        firstName: "Usuario",
+        lastName: "Original",
+        email: "duplicado@shipnow.test",
+        password: "Test123456"
+      };
+
+      await request(app)
+        .post("/api/users")
+        .send(userData);
+
+      const response = await request(app)
+        .post("/api/users")
+        .send({
+          ...userData,
+          firstName: "Otro"
+        });
+
+      expect(response.status).to.equal(409);
+      expect(response.body.status).to.equal("error");
+      expect(response.body.error).to.equal("USER_ALREADY_EXISTS");
+      expect(response.body.message).to.equal(
+        "Ya existe un usuario registrado con ese email"
+      );
+
+      const users = await UserModel.find({
+        email: userData.email
+      });
+
+      expect(users).to.have.lengthOf(1);
+    });
+
+    it("debe responder 400 cuando se envía un rol inválido", async function () {
+      const response = await request(app)
+        .post("/api/users")
+        .send({
+          firstName: "Usuario",
+          lastName: "RolInvalido",
+          email: "rol.invalido@shipnow.test",
+          password: "Test123456",
+          role: "superadmin"
+        });
+
+      expect(response.status).to.equal(400);
+      expect(response.body.status).to.equal("error");
+      expect(response.body.error).to.equal("INVALID_USER_ROLE");
+      expect(response.body.message).to.equal(
+        "El rol de usuario no es válido"
+      );
+
+      const savedUser = await UserModel.findOne({
+        email: "rol.invalido@shipnow.test"
+      });
+
+      expect(savedUser).to.equal(null);
+    });
+
     it("debe responder 400 si faltan campos obligatorios", async function () {
       const response = await request(app)
         .post("/api/users")

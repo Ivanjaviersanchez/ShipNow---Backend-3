@@ -75,3 +75,25 @@ export const deleteUser = async (req, res, next) => {
     next(error);
   }
 };
+
+
+export const uploadUserDocument = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { type } = req.body;
+
+    const user = await userService.addDocument(
+      id,
+      req.file,
+      type
+    );
+
+    res.status(200).json({
+      status: "success",
+      message: "Documento cargado correctamente",
+      payload: user
+    });
+  } catch (error) {
+    next(error);
+  }
+};

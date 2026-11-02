@@ -1,4 +1,3 @@
-
 import dotenv from "dotenv";
 
 const isTest = process.env.NODE_ENV === "test";

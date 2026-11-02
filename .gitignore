@@ -7,3 +7,7 @@ errors.log
 logs/
 .env.test
 .env.test.local
+
+# Archivos subidos por la API
+uploads/*
+!uploads/.gitkeep

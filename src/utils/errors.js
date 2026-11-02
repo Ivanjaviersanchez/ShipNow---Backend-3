@@ -84,6 +84,43 @@ export const ERROR_DEFINITIONS = Object.freeze({
     message: "Ocurrió un error al acceder a la base de datos"
   },
 
+  FILE_REQUIRED: {
+    code: "FILE_REQUIRED",
+    statusCode: 400,
+    message: "Debés adjuntar un archivo"
+  },
+
+  INVALID_FILE_TYPE: {
+    code: "INVALID_FILE_TYPE",
+    statusCode: 400,
+    message: "El tipo de archivo no está permitido"
+  },
+
+  FILE_TOO_LARGE: {
+    code: "FILE_TOO_LARGE",
+    statusCode: 400,
+    message: "El archivo supera el tamaño máximo permitido de 5 MB"
+  },
+
+  INVALID_FILE_FIELD: {
+    code: "INVALID_FILE_FIELD",
+    statusCode: 400,
+    message: "El campo del archivo no es válido"
+  },
+
+  INVALID_DOCUMENT_TYPE: {
+    code: "INVALID_DOCUMENT_TYPE",
+    statusCode: 400,
+    message: "El tipo de documento no es válido"
+  },
+
+  UPLOAD_ERROR: {
+    code: "UPLOAD_ERROR",
+    statusCode: 400,
+    message: "No se pudo procesar la carga del archivo"
+  },
+
+
   INTERNAL_SERVER_ERROR: {
     code: "INTERNAL_SERVER_ERROR",
     statusCode: 500,

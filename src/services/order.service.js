@@ -1,3 +1,4 @@
+
 import { orderRepository } from "../repositories/order.repository.js";
 
 import {
@@ -6,6 +7,8 @@ import {
 } from "../constants/index.js";
 
 import { createAppError } from "../utils/errors.js";
+import { removeUploadedFile } from "../utils/files.js";
+import logger from "../utils/logger.js";
 
 class OrderService {
   async getAllOrders() {
@@ -39,9 +42,7 @@ class OrderService {
     }
 
     if (!Array.isArray(items) || items.length === 0) {
-      throw createAppError(
-        "ORDER_ITEMS_REQUIRED"
-      );
+      throw createAppError("ORDER_ITEMS_REQUIRED");
     }
 
     if (!deliveryAddress) {
@@ -80,10 +81,7 @@ class OrderService {
         );
       }
 
-      if (
-        item.price === undefined ||
-        item.price < 0
-      ) {
+      if (item.price === undefined || item.price < 0) {
         throw createAppError(
           "VALIDATION_ERROR",
           "El precio de cada producto no puede ser negativo"
@@ -91,76 +89,109 @@ class OrderService {
       }
     }
 
-    const orderPriority =
-      priority || DELIVERY_PRIORITY.NORMAL;
+    const orderPriority = priority || DELIVERY_PRIORITY.NORMAL;
 
-    if (
-      !Object.values(DELIVERY_PRIORITY).includes(
-        orderPriority
-      )
-    ) {
+    if (!Object.values(DELIVERY_PRIORITY).includes(orderPriority)) {
       throw createAppError(
         "VALIDATION_ERROR",
         "La prioridad del pedido no es válida"
       );
     }
 
-    const newOrder =
-      await orderRepository.create({
-        customer,
-        items,
-        deliveryAddress:
-          deliveryAddress.trim(),
-        total: Number(total),
-        status: ORDER_STATUS.CREATED,
-        priority: orderPriority
-      });
-
-    return newOrder;
+    return orderRepository.create({
+      customer,
+      items,
+      deliveryAddress: deliveryAddress.trim(),
+      total: Number(total),
+      status: ORDER_STATUS.CREATED,
+      priority: orderPriority
+    });
   }
 
   async updateOrderStatus(id, status) {
-    const existingOrder =
-      await orderRepository.getById(id);
+    const existingOrder = await orderRepository.getById(id);
 
     if (!existingOrder) {
-      throw createAppError(
-        "ORDER_NOT_FOUND"
-      );
+      throw createAppError("ORDER_NOT_FOUND");
     }
 
-    if (
-      !Object.values(ORDER_STATUS).includes(status)
-    ) {
-      throw createAppError(
-        "INVALID_ORDER_STATUS"
-      );
+    if (!Object.values(ORDER_STATUS).includes(status)) {
+      throw createAppError("INVALID_ORDER_STATUS");
     }
 
-    return orderRepository.updateById(
-      id,
-      { status }
-    );
+    return orderRepository.updateById(id, { status });
   }
 
   async deleteOrder(id) {
-    const existingOrder =
-      await orderRepository.getById(id);
+    const existingOrder = await orderRepository.getById(id);
 
     if (!existingOrder) {
-      throw createAppError(
-        "ORDER_NOT_FOUND"
-      );
+      throw createAppError("ORDER_NOT_FOUND");
     }
 
     await orderRepository.deleteById(id);
 
     return {
-      message:
-        "Pedido eliminado correctamente"
+      message: "Pedido eliminado correctamente"
     };
+  }
+
+  async addProof(id, file) {
+    if (!file) {
+      throw createAppError("FILE_REQUIRED");
+    }
+
+    try {
+      const existingOrder = await orderRepository.getById(id);
+
+      if (!existingOrder) {
+        throw createAppError("ORDER_NOT_FOUND");
+      }
+
+      const proofMetadata = {
+        originalName: file.originalname,
+        filename: file.filename,
+        path: `/uploads/proofs/${file.filename}`,
+        mimetype: file.mimetype,
+        size: file.size,
+        uploadedAt: new Date()
+      };
+
+      const updatedOrder = await orderRepository.updateById(
+        id,
+        { proof: proofMetadata }
+      );
+
+      if (!updatedOrder) {
+        throw createAppError("ORDER_NOT_FOUND");
+      }
+
+      logger.info("Comprobante asociado al pedido", {
+        orderId: id,
+        filename: file.filename,
+        size: file.size
+      });
+
+      return updatedOrder;
+    } catch (error) {
+      try {
+        await removeUploadedFile(file.path);
+      } catch (cleanupError) {
+        logger.error("No se pudo eliminar un archivo temporal", {
+          filename: file.filename,
+          message: cleanupError.message
+        });
+      }
+
+      logger.warning("Falló la carga de un comprobante de pedido", {
+        orderId: id,
+        filename: file.filename,
+        error: error.code ?? error.message
+      });
+
+      throw error;
+    }
   }
 }
 
-export const orderService =
-  new OrderService();
+export const orderService = new OrderService();

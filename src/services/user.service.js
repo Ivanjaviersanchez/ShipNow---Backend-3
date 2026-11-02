@@ -1,14 +1,13 @@
+
 import { userRepository } from "../repositories/user.repository.js";
-
-import { USER_ROLES } from "../constants/index.js";
-
+import { USER_ROLES, DOCUMENT_TYPES } from "../constants/index.js";
 import { createAppError } from "../utils/errors.js";
+import { removeUploadedFile } from "../utils/files.js";
+import logger from "../utils/logger.js";
 
 class UserService {
   async getAllUsers() {
-    const users = await userRepository.getAll();
-
-    return users;
+    return userRepository.getAll();
   }
 
   async getUserById(id) {
@@ -39,147 +38,165 @@ class UserService {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-
-    const existingUser =
-      await userRepository.getByEmail(
-        normalizedEmail
-      );
+    const existingUser = await userRepository.getByEmail(normalizedEmail);
 
     if (existingUser) {
-      throw createAppError(
-        "USER_ALREADY_EXISTS"
-      );
+      throw createAppError("USER_ALREADY_EXISTS");
     }
 
-    const userRole =
-      role || USER_ROLES.CUSTOMER;
+    const userRole = role || USER_ROLES.CUSTOMER;
 
-    if (
-      !Object.values(USER_ROLES).includes(userRole)
-    ) {
-      throw createAppError(
-        "INVALID_USER_ROLE"
-      );
+    if (!Object.values(USER_ROLES).includes(userRole)) {
+      throw createAppError("INVALID_USER_ROLE");
     }
 
-    const newUser =
-      await userRepository.create({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: normalizedEmail,
-        password,
-        role: userRole,
-        isAvailable:
-          userRole === USER_ROLES.DRIVER
-            ? Boolean(isAvailable)
-            : false
-      });
-
-    return newUser;
+    return userRepository.create({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: normalizedEmail,
+      password,
+      role: userRole,
+      isAvailable:
+        userRole === USER_ROLES.DRIVER
+          ? Boolean(isAvailable)
+          : false
+    });
   }
 
   async updateUser(id, userData) {
-    const existingUser =
-      await userRepository.getById(id);
+    const existingUser = await userRepository.getById(id);
 
     if (!existingUser) {
-      throw createAppError(
-        "USER_NOT_FOUND"
-      );
+      throw createAppError("USER_NOT_FOUND");
     }
 
-    const updateData = {
-      ...userData
-    };
+    const updateData = { ...userData };
 
     if (updateData.email !== undefined) {
-      const normalizedEmail =
-        updateData.email.trim().toLowerCase();
-
-      const userWithEmail =
-        await userRepository.getByEmail(
-          normalizedEmail
-        );
+      const normalizedEmail = updateData.email.trim().toLowerCase();
+      const userWithEmail = await userRepository.getByEmail(normalizedEmail);
 
       if (
         userWithEmail &&
         userWithEmail._id.toString() !== id
       ) {
-        throw createAppError(
-          "USER_ALREADY_EXISTS"
-        );
+        throw createAppError("USER_ALREADY_EXISTS");
       }
 
-      updateData.email =
-        normalizedEmail;
+      updateData.email = normalizedEmail;
     }
 
     if (updateData.role !== undefined) {
-      if (
-        !Object.values(USER_ROLES).includes(
-          updateData.role
-        )
-      ) {
-        throw createAppError(
-          "INVALID_USER_ROLE"
-        );
+      if (!Object.values(USER_ROLES).includes(updateData.role)) {
+        throw createAppError("INVALID_USER_ROLE");
       }
 
-      if (
-        updateData.role !==
-        USER_ROLES.DRIVER
-      ) {
+      if (updateData.role !== USER_ROLES.DRIVER) {
         updateData.isAvailable = false;
       }
     }
 
-    if (
-      updateData.firstName !== undefined
-    ) {
-      updateData.firstName =
-        updateData.firstName.trim();
+    if (updateData.firstName !== undefined) {
+      updateData.firstName = updateData.firstName.trim();
     }
 
-    if (
-      updateData.lastName !== undefined
-    ) {
-      updateData.lastName =
-        updateData.lastName.trim();
+    if (updateData.lastName !== undefined) {
+      updateData.lastName = updateData.lastName.trim();
     }
 
-    if (
-      updateData.isAvailable !== undefined
-    ) {
-      updateData.isAvailable =
-        Boolean(
-          updateData.isAvailable
-        );
+    if (updateData.isAvailable !== undefined) {
+      updateData.isAvailable = Boolean(updateData.isAvailable);
     }
 
-    return userRepository.updateById(
-      id,
-      updateData
-    );
+    return userRepository.updateById(id, updateData);
   }
 
   async deleteUser(id) {
-    const existingUser =
-      await userRepository.getById(id);
+    const existingUser = await userRepository.getById(id);
 
     if (!existingUser) {
-      throw createAppError(
-        "USER_NOT_FOUND"
-      );
+      throw createAppError("USER_NOT_FOUND");
     }
 
     await userRepository.deleteById(id);
 
     return {
-      message:
-        "Usuario eliminado correctamente"
+      message: "Usuario eliminado correctamente"
     };
+  }
+
+  async addDocument(id, file, type) {
+    if (!file) {
+      throw createAppError("FILE_REQUIRED");
+    }
+
+    try {
+      const allowedTypes = [
+        DOCUMENT_TYPES.USER_DOCUMENT,
+        DOCUMENT_TYPES.DRIVER_LICENSE
+      ];
+
+      if (!allowedTypes.includes(type)) {
+        throw createAppError("INVALID_DOCUMENT_TYPE");
+      }
+
+      const existingUser = await userRepository.getById(id);
+
+      if (!existingUser) {
+        throw createAppError("USER_NOT_FOUND");
+      }
+
+      const documentMetadata = {
+        type,
+        originalName: file.originalname,
+        filename: file.filename,
+        path: `/uploads/documents/${file.filename}`,
+        mimetype: file.mimetype,
+        size: file.size,
+        uploadedAt: new Date()
+      };
+
+      const documents = [
+        ...(existingUser.documents ?? []),
+        documentMetadata
+      ];
+
+      const updatedUser = await userRepository.updateById(
+        id,
+        { documents }
+      );
+
+      if (!updatedUser) {
+        throw createAppError("USER_NOT_FOUND");
+      }
+
+      logger.info("Documento asociado al usuario", {
+        userId: id,
+        documentType: type,
+        filename: file.filename,
+        size: file.size
+      });
+
+      return updatedUser;
+    } catch (error) {
+      try {
+        await removeUploadedFile(file.path);
+      } catch (cleanupError) {
+        logger.error("No se pudo eliminar un archivo temporal", {
+          filename: file.filename,
+          message: cleanupError.message
+        });
+      }
+
+      logger.warning("Falló la carga de un documento de usuario", {
+        userId: id,
+        filename: file.filename,
+        error: error.code ?? error.message
+      });
+
+      throw error;
+    }
   }
 }
 
-export const userService =
-  new UserService();
+export const userService = new UserService();

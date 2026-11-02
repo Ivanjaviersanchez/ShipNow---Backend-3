@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 
 import {
@@ -12,17 +13,47 @@ const orderItemSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
-
     quantity: {
       type: Number,
       required: true,
       min: 1
     },
-
     price: {
       type: Number,
       required: true,
       min: 0
+    }
+  },
+  {
+    _id: false
+  }
+);
+
+const proofSchema = new mongoose.Schema(
+  {
+    originalName: {
+      type: String,
+      required: true
+    },
+    filename: {
+      type: String,
+      required: true
+    },
+    path: {
+      type: String,
+      required: true
+    },
+    mimetype: {
+      type: String,
+      required: true
+    },
+    size: {
+      type: Number,
+      required: true
+    },
+    uploadedAt: {
+      type: Date,
+      default: Date.now
     }
   },
   {
@@ -37,7 +68,6 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true
     },
-
     items: {
       type: [orderItemSchema],
       required: true,
@@ -46,29 +76,29 @@ const orderSchema = new mongoose.Schema(
         message: "El pedido debe tener al menos un producto"
       }
     },
-
     deliveryAddress: {
       type: String,
       required: true,
       trim: true
     },
-
     total: {
       type: Number,
       required: true,
       min: 0
     },
-
     status: {
       type: String,
       enum: Object.values(ORDER_STATUS),
       default: ORDER_STATUS.CREATED
     },
-
     priority: {
       type: String,
       enum: Object.values(DELIVERY_PRIORITY),
       default: DELIVERY_PRIORITY.NORMAL
+    },
+    proof: {
+      type: proofSchema,
+      default: null
     }
   },
   {

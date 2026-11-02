@@ -1,3 +1,4 @@
+
 import OrderModel from "../models/order.model.js";
 
 class OrderRepository {
@@ -48,5 +49,4 @@ class OrderRepository {
   }
 }
 
-export const orderRepository =
-  new OrderRepository();
+export const orderRepository = new OrderRepository();

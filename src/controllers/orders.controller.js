@@ -81,6 +81,25 @@ class OrdersController {
       next(error);
     }
   }
+  async uploadProof(req, res, next) {
+    try {
+      const { id } = req.params;
+
+      const order = await orderService.addProof(
+        id,
+        req.file
+      );
+
+      res.status(200).json({
+        status: "success",
+        message: "Comprobante cargado correctamente",
+        payload: order
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
 }
 
 export const ordersController =
