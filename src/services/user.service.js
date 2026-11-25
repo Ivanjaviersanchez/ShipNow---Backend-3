@@ -5,9 +5,21 @@ import { createAppError } from "../utils/errors.js";
 import { removeUploadedFile } from "../utils/files.js";
 import logger from "../utils/logger.js";
 
+import { parsePagination, buildPagination } from "../utils/pagination.js";
+
 class UserService {
-  async getAllUsers() {
-    return userRepository.getAll();
+  async getAllUsers(query = {}) {
+    const { page, limit, skip } = parsePagination(query);
+
+    const { data, total } = await userRepository.getAll({
+      skip,
+      limit
+    });
+
+    return {
+      data,
+      pagination: buildPagination(page, limit, total)
+    };
   }
 
   async getUserById(id) {

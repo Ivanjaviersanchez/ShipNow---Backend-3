@@ -1,14 +1,24 @@
 import { deliveryRepository } from "../repositories/delivery.repository.js";
 
-import {
-  DELIVERY_STATUS
-} from "../constants/index.js";
+import { DELIVERY_STATUS } from "../constants/index.js";
 
 import { createAppError } from "../utils/errors.js";
 
+import { parsePagination, buildPagination } from "../utils/pagination.js";
+
 class DeliveryService {
-  async getAllDeliveries() {
-    return deliveryRepository.getAll();
+  async getAllDeliveries(query = {}) {
+    const { page, limit, skip } = parsePagination(query);
+
+    const { data, total } = await deliveryRepository.getAll({
+      skip,
+      limit
+    });
+
+    return {
+      data,
+      pagination: buildPagination(page, limit, total)
+    };
   }
 
   async getDeliveryById(id) {

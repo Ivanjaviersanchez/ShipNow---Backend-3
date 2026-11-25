@@ -24,18 +24,12 @@ winston.addColors({
   debug: "blue"
 });
 
-const consoleLevel =
-  config.nodeEnv === "production"
-    ? "info"
-    : "debug";
-
+// Formato para consola
 const consoleFormat = winston.format.combine(
   winston.format.timestamp({
     format: "YYYY-MM-DD HH:mm:ss"
   }),
-
   winston.format.colorize(),
-
   winston.format.printf(
     ({ timestamp, level, message, ...metadata }) => {
       const metadataString =
@@ -48,6 +42,7 @@ const consoleFormat = winston.format.combine(
   )
 );
 
+// Formato JSON para archivos
 const fileFormat = winston.format.combine(
   winston.format.timestamp({
     format: "YYYY-MM-DD HH:mm:ss"
@@ -55,29 +50,45 @@ const fileFormat = winston.format.combine(
   winston.format.json()
 );
 
-const errorRotateTransport =
-  new DailyRotateFile({
-    filename: "logs/error-%DATE%.log",
-    datePattern: "YYYY-MM-DD",
-    level: "error",
-    maxFiles: "14d",
-    format: fileFormat
-  });
+const transports = [];
+
+// Testing: transporte silencioso, sin salida de logs
+if (config.nodeEnv === "test") {
+  transports.push(
+    new winston.transports.Console({
+      silent: true
+    })
+  );
+}
+
+// Desarrollo: logs en consola
+if (config.nodeEnv === "development") {
+  transports.push(
+    new winston.transports.Console({
+      level: config.logLevel,
+      format: consoleFormat
+    })
+  );
+}
+
+// Producción: errores en archivos rotativos
+if (config.nodeEnv === "production") {
+  transports.push(
+    new DailyRotateFile({
+      filename: "logs/error-%DATE%.log",
+      datePattern: "YYYY-MM-DD",
+      level: "error",
+      maxFiles: "14d",
+      format: fileFormat
+    })
+  );
+}
 
 const logger = winston.createLogger({
   levels: customLevels.levels,
-  level: "debug",
-
+  level: config.logLevel,
   format: fileFormat,
-
-  transports: [
-    new winston.transports.Console({
-      level: consoleLevel,
-      format: consoleFormat
-    }),
-
-    errorRotateTransport
-  ]
+  transports
 });
 
 export default logger;

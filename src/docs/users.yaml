@@ -1,14 +1,33 @@
-paths:
 
+paths:
   /api/users:
     get:
       tags:
         - Users
       summary: Obtener todos los usuarios
-      description: Devuelve todos los usuarios registrados en ShipNow.
+      description: Devuelve los usuarios registrados en ShipNow mediante paginacion. Por defecto utiliza page=1 y limit=10. El limite efectivo maximo es 50.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Numero de pagina. Debe ser un entero mayor a 0.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          required: false
+          description: Cantidad de resultados por pagina. Debe ser un entero mayor a 0. Los valores superiores a 50 se ajustan automaticamente a 50.
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+          example: 10
       responses:
         "200":
-          description: Lista de usuarios obtenida correctamente
+          description: Lista paginada de usuarios obtenida correctamente
           content:
             application/json:
               schema:
@@ -22,6 +41,24 @@ paths:
                     email: "ivan@example.com"
                     role: "customer"
                     isAvailable: false
+                    documents: []
+                pagination:
+                  page: 1
+                  limit: 10
+                  total: 35
+                  totalPages: 4
+                  hasPrevPage: false
+                  hasNextPage: true
+        "400":
+          description: Parametros de paginacion invalidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: VALIDATION_ERROR
+                message: El parametro page debe ser un numero entero mayor a 0
         "500":
           description: Error interno del servidor
           content:
@@ -68,6 +105,7 @@ paths:
                   email: "ivan@example.com"
                   role: "customer"
                   isAvailable: false
+                  documents: []
                   createdAt: "2026-09-28T15:00:00.000Z"
                   updatedAt: "2026-09-28T15:00:00.000Z"
         "400":
@@ -110,7 +148,6 @@ paths:
                 error: INTERNAL_SERVER_ERROR
                 message: Ocurrio un error interno del servidor
 
-
   /api/users/{id}:
     get:
       tags:
@@ -141,6 +178,7 @@ paths:
                   email: "ivan@example.com"
                   role: "customer"
                   isAvailable: false
+                  documents: []
         "404":
           description: Usuario no encontrado
           content:
@@ -204,6 +242,7 @@ paths:
                   email: "ivan.nuevo@example.com"
                   role: "driver"
                   isAvailable: true
+                  documents: []
         "404":
           description: Usuario no encontrado
           content:
@@ -291,3 +330,122 @@ paths:
                 status: error
                 error: INTERNAL_SERVER_ERROR
                 message: Ocurrio un error interno del servidor
+
+  /api/users/{id}/documents:
+    post:
+      tags:
+        - Users
+      summary: Cargar documento de un usuario
+      description: Permite adjuntar un documento PDF o imagen JPG, PNG o WEBP a un usuario existente. Tamaño máximo permitido 5 MB.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: string
+          example: "68b123456789abcdef111111"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - document
+                - type
+              properties:
+                document:
+                  type: string
+                  format: binary
+                  description: Archivo del documento. Formatos permitidos PDF, JPG, PNG y WEBP. Máximo 5 MB.
+                type:
+                  type: string
+                  enum:
+                    - user_document
+                    - driver_license
+                  description: Tipo de documento admitido.
+                  example: user_document
+      responses:
+        "200":
+          description: Documento cargado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSuccessResponse"
+              example:
+                status: success
+                message: Documento cargado correctamente
+                payload:
+                  _id: "68b123456789abcdef111111"
+                  documents:
+                    - type: user_document
+                      originalName: documento.pdf
+                      filename: "uuid-generado.pdf"
+                      path: "/uploads/documents/uuid-generado.pdf"
+                      mimetype: application/pdf
+                      size: 102400
+                      uploadedAt: "2026-09-28T15:00:00.000Z"
+        "400":
+          description: Error de validacion o carga del archivo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                fileRequired:
+                  summary: Archivo obligatorio
+                  value:
+                    status: error
+                    error: FILE_REQUIRED
+                    message: Debés adjuntar un archivo
+                invalidFileType:
+                  summary: Tipo de archivo no permitido
+                  value:
+                    status: error
+                    error: INVALID_FILE_TYPE
+                    message: El tipo de archivo no está permitido
+                fileTooLarge:
+                  summary: Archivo superior a 5 MB
+                  value:
+                    status: error
+                    error: FILE_TOO_LARGE
+                    message: El archivo supera el tamaño máximo permitido de 5 MB
+                invalidFileField:
+                  summary: Campo multipart incorrecto
+                  value:
+                    status: error
+                    error: INVALID_FILE_FIELD
+                    message: El campo del archivo no es válido
+                invalidDocumentType:
+                  summary: Tipo de documento no válido
+                  value:
+                    status: error
+                    error: INVALID_DOCUMENT_TYPE
+                    message: El tipo de documento no es válido
+                uploadError:
+                  summary: Error durante la carga
+                  value:
+                    status: error
+                    error: UPLOAD_ERROR
+                    message: No se pudo procesar la carga del archivo
+        "404":
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: USER_NOT_FOUND
+                message: No se encontró el usuario solicitado
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: INTERNAL_SERVER_ERROR
+                message: Ocurrió un error interno del servidor

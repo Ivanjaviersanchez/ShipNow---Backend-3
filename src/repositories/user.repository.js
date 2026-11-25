@@ -1,11 +1,19 @@
-
 import UserModel from "../models/user.model.js";
 
 class UserRepository {
-  async getAll() {
-    return UserModel.find({})
-      .select("firstName lastName email role isAvailable documents")
-      .lean();
+  async getAll({ skip = 0, limit = 10 } = {}) {
+    const [users, total] = await Promise.all([
+      UserModel.find({})
+        .select("firstName lastName email role isAvailable documents")
+        .sort({ createdAt: -1, _id: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+
+      UserModel.countDocuments({})
+    ]);
+
+    return { data: users, total };
   }
 
   async getById(id) {

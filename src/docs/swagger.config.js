@@ -1,3 +1,4 @@
+
 import swaggerJSDoc from "swagger-jsdoc";
 
 const swaggerOptions = {
@@ -13,8 +14,8 @@ const swaggerOptions = {
 
     servers: [
       {
-        url: "http://localhost:8080",
-        description: "Servidor local",
+        url: "/",
+        description: "Servidor actual de ShipNow",
       },
     ],
 

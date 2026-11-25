@@ -1,14 +1,22 @@
-
 import OrderModel from "../models/order.model.js";
 
 class OrderRepository {
-  async getAll() {
-    return OrderModel.find({})
-      .populate(
-        "customer",
-        "firstName lastName email role"
-      )
-      .lean();
+  async getAll({ skip = 0, limit = 10 } = {}) {
+    const [orders, total] = await Promise.all([
+      OrderModel.find({})
+        .populate(
+          "customer",
+          "firstName lastName email role"
+        )
+        .sort({ createdAt: -1, _id: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+
+      OrderModel.countDocuments({})
+    ]);
+
+    return { data: orders, total };
   }
 
   async getById(id) {

@@ -1,3 +1,4 @@
+
 tags:
   - name: Deliveries
     description: Operaciones relacionadas con entregas
@@ -9,10 +10,29 @@ paths:
       tags:
         - Deliveries
       summary: Obtener todas las entregas
-      description: Devuelve todas las entregas registradas en ShipNow.
+      description: Devuelve las entregas registradas en ShipNow mediante paginacion. Por defecto utiliza page=1 y limit=10. El limite efectivo maximo es 50.
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Numero de pagina. Debe ser un entero mayor a 0.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          required: false
+          description: Cantidad de resultados por pagina. Debe ser un entero mayor a 0. Los valores superiores a 50 se ajustan automaticamente a 50.
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+          example: 10
       responses:
         "200":
-          description: Lista de entregas obtenida correctamente
+          description: Lista paginada de entregas obtenida correctamente
           content:
             application/json:
               schema:
@@ -21,11 +41,44 @@ paths:
                 status: success
                 payload:
                   - _id: "68b123456789abcdef123456"
-                    order: "68b123456789abcdef654321"
-                    driver: "68b123456789abcdef111111"
+                    order:
+                      _id: "68b123456789abcdef654321"
+                      customer: "68b123456789abcdef111111"
+                      items:
+                        - name: "Notebook Lenovo"
+                          quantity: 2
+                          price: 850000
+                      deliveryAddress: "Av. Independencia 1234, Mar del Plata"
+                      total: 1700000
+                      status: created
+                      priority: normal
+                    driver:
+                      _id: "68b123456789abcdef111111"
+                      firstName: "Ivan"
+                      lastName: "Sanchez"
+                      email: "ivan@example.com"
+                      role: driver
+                      isAvailable: true
                     status: pending
                     createdAt: "2026-09-28T15:00:00.000Z"
                     updatedAt: "2026-09-28T15:00:00.000Z"
+                pagination:
+                  page: 1
+                  limit: 10
+                  total: 35
+                  totalPages: 4
+                  hasPrevPage: false
+                  hasNextPage: true
+        "400":
+          description: Parametros de paginacion invalidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: VALIDATION_ERROR
+                message: El parametro page debe ser un numero entero mayor a 0
         "500":
           description: Error interno del servidor
           content:
@@ -93,6 +146,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: INTERNAL_SERVER_ERROR
+                message: Ocurrio un error interno del servidor
 
   /api/deliveries/{id}:
     get:
@@ -119,8 +176,24 @@ paths:
                 status: success
                 payload:
                   _id: "68b123456789abcdef123456"
-                  order: "68b123456789abcdef654321"
-                  driver: "68b123456789abcdef111111"
+                  order:
+                    _id: "68b123456789abcdef654321"
+                    customer: "68b123456789abcdef111111"
+                    items:
+                      - name: "Notebook Lenovo"
+                        quantity: 2
+                        price: 850000
+                    deliveryAddress: "Av. Independencia 1234, Mar del Plata"
+                    total: 1700000
+                    status: created
+                    priority: normal
+                  driver:
+                    _id: "68b123456789abcdef111111"
+                    firstName: "Ivan"
+                    lastName: "Sanchez"
+                    email: "ivan@example.com"
+                    role: driver
+                    isAvailable: true
                   status: pending
                   createdAt: "2026-09-28T15:00:00.000Z"
                   updatedAt: "2026-09-28T15:00:00.000Z"
@@ -140,6 +213,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: INTERNAL_SERVER_ERROR
+                message: Ocurrio un error interno del servidor
 
     delete:
       tags:
@@ -180,6 +257,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: INTERNAL_SERVER_ERROR
+                message: Ocurrio un error interno del servidor
 
   /api/deliveries/{id}/status:
     patch:
@@ -215,8 +296,24 @@ paths:
                 message: Estado de la entrega actualizado correctamente
                 payload:
                   _id: "68b123456789abcdef123456"
-                  order: "68b123456789abcdef654321"
-                  driver: "68b123456789abcdef111111"
+                  order:
+                    _id: "68b123456789abcdef654321"
+                    customer: "68b123456789abcdef111111"
+                    items:
+                      - name: "Notebook Lenovo"
+                        quantity: 2
+                        price: 850000
+                    deliveryAddress: "Av. Independencia 1234, Mar del Plata"
+                    total: 1700000
+                    status: created
+                    priority: normal
+                  driver:
+                    _id: "68b123456789abcdef111111"
+                    firstName: "Ivan"
+                    lastName: "Sanchez"
+                    email: "ivan@example.com"
+                    role: driver
+                    isAvailable: true
                   status: in_transit
                   createdAt: "2026-09-28T15:00:00.000Z"
                   updatedAt: "2026-09-28T16:00:00.000Z"
@@ -246,3 +343,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                error: INTERNAL_SERVER_ERROR
+                message: Ocurrio un error interno del servidor

@@ -1,0 +1,39 @@
+
+# Dependencias locales
+node_modules/
+
+# Variables de entorno y secretos
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Archivos subidos por usuarios
+uploads/*
+!uploads/.gitkeep
+
+# Testing
+tests/
+.mocharc.json
+.env.test
+
+# Cobertura y temporales
+coverage/
+.nyc_output/
+tmp/
+temp/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Documentación del proyecto
+README*.md

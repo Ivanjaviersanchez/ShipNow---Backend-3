@@ -23,6 +23,9 @@ como objetivo aplicar:
 -   Pruebas funcionales automatizadas con Mocha, Chai y Supertest.
 -   Aislamiento de la base de datos de testing respecto de la base de
     desarrollo.
+-   Paginación y límites para consultas de listados.
+-   Health check y configuración por entorno.
+-   Contenerización de la API mediante Docker.
 
 ------------------------------------------------------------------------
 
@@ -232,24 +235,31 @@ ShipNow/
 │   ├── utils/
 │   │   ├── errors.js
 │   │   ├── files.js
-│   │   └── logger.js
+│   │   ├── logger.js
+│   │   └── pagination.js
 │   └── app.js
 ├── tests/
 │   ├── docs/swagger.test.js
 │   ├── logger/logger.test.js
+│   ├── middleware/
+│   │   └── error.middleware.test.js
 │   ├── mocks/mocks-production.test.js
 │   ├── mocks/mocks.test.js
 │   ├── orders/orders.test.js
-│   ├── routes/notFound.test.js
+│   ├── routes/
+│   │   ├── health.test.js
+│   │   └── notFound.test.js
 │   ├── setup.js
 │   ├── setup.test.js
 │   └── users/users.test.js
 ├── uploads/
 │   └── .gitkeep
+├── .dockerignore
 ├── .env.example
 ├── .env.test.example
 ├── .gitignore
 ├── .mocharc.json
+├── Dockerfile
 ├── package.json
 ├── package-lock.json
 ├── README.md
@@ -1464,7 +1474,12 @@ Ejemplo:
 PORT=8080
 MONGODB_URI=mongodb://127.0.0.1:27017/shipnow
 NODE_ENV=development
+LOG_LEVEL=debug
 ```
+
+`LOG_LEVEL` permite definir el nivel mínimo de logging. Si no se informa,
+la configuración centralizada aplica un nivel predeterminado según el
+entorno.
 
 El archivo `.env` no debe subirse al repositorio.
 
@@ -1477,9 +1492,10 @@ Para indicar las variables necesarias se utiliza:
 Ejemplo:
 
 ``` env
-PORT=
-MONGODB_URI=
-NODE_ENV=
+PORT=8080
+MONGODB_URI=mongodb://127.0.0.1:27017/shipnow
+NODE_ENV=development
+LOG_LEVEL=debug
 ```
 
 ------------------------------------------------------------------------
@@ -1667,23 +1683,32 @@ http://localhost:8080/api/docs
 
 # ❤️ Health Check
 
-La API posee una ruta raíz para comprobar que la aplicación funciona
-correctamente.
+ShipNow dispone de un endpoint específico para comprobar el estado
+básico de la API y conocer información operativa del proceso.
 
 ## Endpoint
 
 ``` http
-GET /
+GET /health
 ```
 
-Respuesta:
+Respuesta verificada en el contenedor Docker con `NODE_ENV=production`:
 
 ``` json
 {
-  "status": "success",
-  "message": "ShipNow API funcionando correctamente"
+  "status": "OK",
+  "environment": "production",
+  "uptime": 15.78,
+  "timestamp": "2026-11-23T22:03:33.556Z"
 }
 ```
+
+`uptime` representa el tiempo de actividad del proceso en segundos y
+`timestamp` indica el momento en que se generó la respuesta. El valor
+numérico de `uptime` y la fecha cambian en cada solicitud.
+
+La ruta raíz `GET /` se conserva como respuesta informativa de la API;
+`GET /health` es el endpoint específico de health check.
 
 ------------------------------------------------------------------------
 
@@ -2177,12 +2202,15 @@ tests/
 ├── orders/
 │   └── orders.test.js
 ├── mocks/
-│   └── mocks.test.js
+│   ├── mocks.test.js
+│   └── mocks-production.test.js
 ├── logger/
 │   └── logger.test.js
 ├── docs/
 │   └── swagger.test.js
+├── middleware/
 └── routes/
+    ├── health.test.js
     └── notFound.test.js
 ```
 
@@ -2324,9 +2352,9 @@ npm test
 
 El setup prepara la base de testing y cierra la conexión al finalizar.
 La suite debe poder ejecutarse consecutivamente con resultados
-consistentes, sin utilizar la base de desarrollo `shipnow`. En la última
-validación registrada para esta versión se obtuvieron **28 pruebas
-aprobadas (28 passing) y 0 fallidas**.
+consistentes, sin utilizar la base de desarrollo `shipnow`. En la
+validación realizada durante la integración de PE8 se obtuvieron
+**46 pruebas aprobadas (46 passing) y 0 fallidas**.
 
 ------------------------------------------------------------------------
 
@@ -2603,6 +2631,163 @@ negativos:
     entidad.
 -   Exclusión de los archivos subidos mediante `.gitignore`.
 
+# ⚡ Performance, escalabilidad y Docker --- Pre-entrega 8
+
+La Pre-entrega 8 incorpora mejoras para controlar el volumen de
+respuestas, configurar la aplicación según el entorno y ejecutar ShipNow
+en un contenedor Docker.
+
+## Paginación de listados
+
+Se incorporó una utilidad compartida en:
+
+``` text
+src/utils/pagination.js
+```
+
+La utilidad procesa los parámetros `page` y `limit`, calcula `skip` y
+construye los metadatos de paginación. Los valores predeterminados son:
+
+| Parámetro | Valor |
+| --- | ---: |
+| `page` | 1 |
+| `limit` | 10 |
+| Límite máximo | 50 |
+
+Los parámetros deben ser números enteros mayores que cero. Los valores
+de `limit` superiores al máximo se ajustan a 50. Los listados de
+usuarios, pedidos y entregas utilizan paginación en sus operaciones de
+consulta.
+
+Ejemplo de consulta:
+
+``` http
+GET /api/orders?page=2&limit=10
+```
+
+La respuesta de los listados incorpora metadatos como página actual,
+límite, cantidad total, cantidad de páginas y disponibilidad de página
+anterior o siguiente.
+
+## Configuración por entorno
+
+La configuración centralizada se encuentra en:
+
+``` text
+src/config/index.js
+```
+
+Se contemplan los entornos `development`, `test` y `production`. Entre
+las variables utilizadas se encuentran:
+
+| Variable | Función |
+| --- | --- |
+| `PORT` | Puerto HTTP de la aplicación. |
+| `MONGODB_URI` | URI de MongoDB para desarrollo o producción. |
+| `MONGODB_URI_TEST` | URI exclusiva para testing. |
+| `NODE_ENV` | Entorno de ejecución. |
+| `LOG_LEVEL` | Nivel mínimo de logging. |
+
+La configuración valida el entorno, el puerto, las variables requeridas
+y el nivel de logging. En testing comprueba además que la URI apunte a
+la base `shipnow_test`, evitando utilizar accidentalmente la base de
+desarrollo.
+
+Los archivos `.env`, `.env.test` y demás archivos locales con secretos
+no deben versionarse. Se proporciona `.env.example` como referencia
+para desarrollo y `.env.test.example` como referencia para testing.
+
+## Health check
+
+El endpoint `GET /health` responde con:
+
+- Estado de la API.
+- Entorno de ejecución.
+- Tiempo de actividad del proceso (`uptime`).
+- Fecha y hora de generación de la respuesta (`timestamp`).
+
+No devuelve URI de MongoDB, contraseñas ni secretos de configuración.
+Su respuesta se verifica mediante una prueba funcional automatizada.
+
+## Dockerfile
+
+El proyecto incorpora un `Dockerfile` basado en `node:22-alpine`. La
+imagen instala dependencias de producción, copia el código de la API,
+prepara los directorios `uploads` y `logs` y ejecuta el proceso con el
+usuario sin privilegios `node`.
+
+La imagen establece `NODE_ENV=production` y `PORT=8080` como valores
+predeterminados. Las variables sensibles y la URI de MongoDB deben
+proporcionarse al ejecutar el contenedor, no deben incluirse dentro de
+la imagen.
+
+### Construir la imagen
+
+Desde la raíz del proyecto:
+
+``` bash
+docker build -t shipnow:pe8 .
+```
+
+### Ejecutar el contenedor
+
+Ejemplo de ejecución, reemplazando la URI por la correspondiente al
+entorno donde se encuentre MongoDB:
+
+``` bash
+docker run --name shipnow-api -p 8080:8080 \
+  -e MONGODB_URI="mongodb://host.docker.internal:27017/shipnow" \
+  -e NODE_ENV=production \
+  -e LOG_LEVEL=info \
+  shipnow:pe8
+```
+
+Si MongoDB se encuentra en otro host o servicio, debe utilizarse una URI
+accesible desde el contenedor. No se debe copiar una URI con credenciales
+reales al README ni al repositorio.
+
+Una vez iniciado, pueden verificarse la API, el health check y Swagger
+utilizando el puerto publicado en el host:
+
+``` text
+http://localhost:8080/
+http://localhost:8080/health
+http://localhost:8080/api/docs
+```
+
+## .dockerignore
+
+El archivo `.dockerignore` reduce el contexto enviado al motor de Docker
+y evita copiar elementos que no deben formar parte de la imagen, como:
+
+- `node_modules/` local.
+- Archivos `.env` y configuraciones locales.
+- `.git/` y `.gitignore`.
+- Logs.
+- Archivos cargados por usuarios en `uploads/`.
+- Tests y archivos de cobertura.
+- Archivos temporales y del sistema.
+- Documentación README.
+
+Los archivos de entorno, logs, archivos subidos y dependencias locales
+no deben incorporarse a la imagen como datos del entorno de desarrollo.
+
+## Verificaciones de PE8
+
+Durante la validación se comprobó que:
+
+- `npm test` finalizó con **46 passing y 0 failing**.
+- `docker build -t shipnow:pe8 .` finalizó correctamente.
+- La imagen `shipnow:pe8` se generó sin errores.
+- El contenedor respondió correctamente al endpoint `/health` con
+  `environment: production`.
+- Swagger UI se visualizó desde la aplicación ejecutada en Docker.
+
+La construcción de la imagen y la respuesta de health check fueron
+verificadas en el entorno local de Docker Desktop.
+
+------------------------------------------------------------------------
+
 # 🎯 Objetivos académicos
 
 Este proyecto fue desarrollado como parte del proceso de aprendizaje de
@@ -2645,6 +2830,11 @@ Los principales objetivos son aplicar:
 -   Aislamiento de la base de datos de testing.
 -   Validación automatizada de respuestas HTTP y errores.
 -   Configuración de entornos de prueba.
+-   Paginación de listados y límites de resultados.
+-   Validación de configuración para development, test y production.
+-   Health check con estado, entorno, uptime y timestamp.
+-   Construcción y ejecución de la API mediante Docker.
+-   Exclusión de archivos locales y sensibles mediante `.dockerignore`.
 
 ------------------------------------------------------------------------
 
@@ -2702,7 +2892,7 @@ Actualmente ShipNow cuenta con:
 -   ✅ Documentación de Deliveries.
 -   ✅ Documentación de Mocks.
 -   ✅ Documentación de Logger.
--   ✅ README actualizado y sincronizado con la API real.
+-   ✅ README con documentación de las pre-entregas 1 a 8.
 -   ✅ Pruebas funcionales automatizadas con Mocha, Chai y Supertest.
 -   ✅ Configuración del entorno de testing.
 -   ✅ Base de datos de testing independiente: `shipnow_test`.

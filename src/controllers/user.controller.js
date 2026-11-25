@@ -2,11 +2,12 @@ import { userService } from "../services/user.service.js";
 
 export const getAllUsers = async (req, res, next) => {
   try {
-    const users = await userService.getAllUsers();
+    const result = await userService.getAllUsers(req.query);
 
     res.status(200).json({
       status: "success",
-      payload: users
+      payload: result.data,
+      pagination: result.pagination
     });
   } catch (error) {
     next(error);

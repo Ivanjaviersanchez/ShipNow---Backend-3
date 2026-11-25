@@ -1,18 +1,26 @@
-
 import { orderRepository } from "../repositories/order.repository.js";
 
-import {
-  ORDER_STATUS,
-  DELIVERY_PRIORITY
-} from "../constants/index.js";
+import { ORDER_STATUS, DELIVERY_PRIORITY } from "../constants/index.js";
 
 import { createAppError } from "../utils/errors.js";
 import { removeUploadedFile } from "../utils/files.js";
 import logger from "../utils/logger.js";
 
+import { parsePagination, buildPagination } from "../utils/pagination.js";
+
 class OrderService {
-  async getAllOrders() {
-    return orderRepository.getAll();
+  async getAllOrders(query = {}) {
+    const { page, limit, skip } = parsePagination(query);
+
+    const { data, total } = await orderRepository.getAll({
+      skip,
+      limit
+    });
+
+    return {
+      data,
+      pagination: buildPagination(page, limit, total)
+    };
   }
 
   async getOrderById(id) {

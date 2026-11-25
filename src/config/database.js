@@ -10,12 +10,27 @@ export const connectDatabase = async () => {
     logger.info("MongoDB conectado correctamente");
 
   } catch (error) {
-
     logger.error("Error al conectar con MongoDB", {
       message: error.message,
       stack: error.stack
     });
 
-    process.exit(1);
+    throw error;
+  }
+};
+
+export const disconnectDatabase = async () => {
+  try {
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+      logger.info("Conexión con MongoDB cerrada correctamente");
+    }
+  } catch (error) {
+    logger.error("Error al cerrar la conexión con MongoDB", {
+      message: error.message,
+      stack: error.stack
+    });
+
+    throw error;
   }
 };

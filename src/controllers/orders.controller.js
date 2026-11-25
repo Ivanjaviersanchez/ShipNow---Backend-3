@@ -3,11 +3,12 @@ import { orderService } from "../services/order.service.js";
 class OrdersController {
   async getAll(req, res, next) {
     try {
-      const orders = await orderService.getAllOrders();
+      const result = await orderService.getAllOrders(req.query);
 
       res.status(200).json({
         status: "success",
-        payload: orders
+        payload: result.data,
+        pagination: result.pagination
       });
     } catch (error) {
       next(error);
